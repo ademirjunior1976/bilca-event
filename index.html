@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bilca Event</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 560px; margin: 32px auto; padding: 0 16px; color: #18212f; }
+        h1 { margin-bottom: 8px; }
+        p { line-height: 1.5; }
+        .card { border: 1px solid #d0d7de; border-radius: 8px; padding: 20px; margin-top: 20px; }
+        .btn { display: inline-block; margin-top: 16px; padding: 12px 20px; font-size: 16px; font-weight: bold;
+               background: #1f6feb; color: white; border-radius: 6px; text-decoration: none; text-align: center; }
+        .event-list a { display: block; padding: 12px 0; border-bottom: 1px solid #d0d7de; text-decoration: none; color: #18212f; }
+        .event-list a:last-child { border-bottom: none; }
+        .muted { color: #57606a; font-size: 14px; }
+        #message { margin-top: 16px; }
+    </style>
+</head>
+<body>
+<h1>Bilca Event</h1>
+<div id="content">Carregando...</div>
+
+<script>
+    const owner = location.hostname.split('.')[0];
+    const repoMatch = location.pathname.match(/^\/([^\/]+)\//);
+    const repo = repoMatch ? repoMatch[1] : '';
+    const params = new URLSearchParams(location.search);
+    const code = params.get('evento');
+    const content = document.getElementById('content');
+
+    fetch('events.json')
+        .then(r => r.json())
+        .then(events => {
+            if (!code) {
+                renderList(events);
+            } else {
+                const event = events.find(e => e.code === code);
+                event ? renderEvent(event) : renderNotFound();
+            }
+        })
+        .catch(() => { content.innerHTML = '<p>Não foi possível carregar os eventos.</p>'; });
+
+    function renderList(events) {
+        if (!events.length) {
+            content.innerHTML = '<p>Nenhum evento cadastrado no momento.</p>';
+            return;
+        }
+        const items = events.map(e =>
+            `<a href="?evento=${encodeURIComponent(e.code)}"><strong>${escapeHtml(e.name)}</strong><br>
+             <span class="muted">${escapeHtml(e.date)} · ${escapeHtml(e.host)}</span></a>`
+        ).join('');
+        content.innerHTML = `<div class="card event-list">${items}</div>`;
+    }
+
+    function renderEvent(event) {
+        const issueUrl = `https://github.com/${owner}/${repo}/issues/new`
+            + `?template=inscricao.yml`
+            + `&labels=${encodeURIComponent('inscricao,evento-' + event.code)}`
+            + `&evento=${encodeURIComponent(event.code)}`;
+        content.innerHTML = `
+            <p>${escapeHtml(event.date)} · Host: ${escapeHtml(event.host)}</p>
+            <div class="card">
+                <h2>${escapeHtml(event.name)}</h2>
+                <p>Confirme sua presença para concorrer aos brindes. O cadastro é feito como uma issue no GitHub
+                   (é rápido, leva menos de um minuto) — você vai precisar estar logado na sua conta do GitHub.</p>
+                <a class="btn" href="${issueUrl}" target="_blank" rel="noopener">Confirmar presença</a>
+                <p id="message" class="muted"></p>
+            </div>`;
+    }
+
+    function renderNotFound() {
+        content.innerHTML = '<p>Evento não encontrado. Confira o link do QR Code.</p>';
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+</script>
+</body>
+</html>
