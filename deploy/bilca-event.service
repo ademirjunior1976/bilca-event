@@ -1,0 +1,19 @@
+[Unit]
+Description=Bilca Event
+After=network.target
+
+[Service]
+Type=simple
+User=bilca
+Group=bilca
+WorkingDirectory=/opt/bilca-event/app
+EnvironmentFile=/opt/bilca-event/.env
+ExecStart=/usr/bin/java -jar /opt/bilca-event/app/app.jar
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/bilca-event
+
+[Install]
+WantedBy=multi-user.target
