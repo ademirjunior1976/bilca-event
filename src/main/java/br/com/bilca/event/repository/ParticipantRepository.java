@@ -2,10 +2,21 @@ package br.com.bilca.event.repository;
 
 import br.com.bilca.event.domain.Participant;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public class ParticipantRepository {
+
+    private static final RowMapper<Participant> ROW_MAPPER = (rs, rowNum) -> new Participant(
+            rs.getLong("id"),
+            rs.getLong("event_id"),
+            rs.getString("name"),
+            rs.getString("email"),
+            rs.getString("phone"),
+            rs.getString("tech_stack"));
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -32,5 +43,16 @@ public class ParticipantRepository {
         Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM participants WHERE event_id = ?", Integer.class, eventId);
         return count == null ? 0 : count;
+    }
+
+    public List<Participant> findByEventId(Long eventId) {
+        return jdbcTemplate.query(
+                "SELECT id, event_id, name, email, phone, tech_stack FROM participants WHERE event_id = ? ORDER BY id DESC",
+                ROW_MAPPER, eventId);
+    }
+
+    public int deleteByIdAndEventId(Long id, Long eventId) {
+        return jdbcTemplate.update(
+                "DELETE FROM participants WHERE id = ? AND event_id = ?", id, eventId);
     }
 }

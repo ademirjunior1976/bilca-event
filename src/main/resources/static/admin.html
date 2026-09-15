@@ -102,24 +102,48 @@
     </div>
 
     <div id="app" style="display:none">
-        <div class="top">
-            <div>
-                <h1>Eventos</h1>
-                <p class="meta">Crie, edite e exclua eventos direto na lista.</p>
+        <div id="eventsPanel">
+            <div class="top">
+                <div>
+                    <h1>Eventos</h1>
+                    <p class="meta">Crie, edite e exclua eventos direto na lista.</p>
+                </div>
+                <button id="addBtn">+ Incluir evento</button>
             </div>
-            <button id="addBtn">+ Incluir evento</button>
+
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>Nome</th><th>Data</th><th>Host</th><th>Link</th><th></th></tr>
+                        </thead>
+                        <tbody id="tbody"></tbody>
+                    </table>
+                </div>
+                <div id="rowMsg"></div>
+            </div>
         </div>
 
-        <div class="card">
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr><th>Nome</th><th>Data</th><th>Host</th><th>Link</th><th></th></tr>
-                    </thead>
-                    <tbody id="tbody"></tbody>
-                </table>
+        <div id="participantsPanel" style="display:none">
+            <div class="top">
+                <div>
+                    <h1 id="participantsTitle">Participantes</h1>
+                    <p class="meta" id="participantsSub"></p>
+                </div>
+                <button class="ghost" id="backBtn">← Voltar aos eventos</button>
             </div>
-            <div id="rowMsg"></div>
+
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>Nome</th><th>E-mail</th><th>Telefone</th><th>Stack</th><th></th></tr>
+                        </thead>
+                        <tbody id="participantsTbody"></tbody>
+                    </table>
+                </div>
+                <div id="participantsMsg"></div>
+            </div>
         </div>
     </div>
     <footer>Bilca Systems</footer>
@@ -133,6 +157,14 @@
     const tbody = document.getElementById('tbody');
     const rowMsg = document.getElementById('rowMsg');
     const addBtn = document.getElementById('addBtn');
+    const eventsPanel = document.getElementById('eventsPanel');
+    const participantsPanel = document.getElementById('participantsPanel');
+    const participantsTitle = document.getElementById('participantsTitle');
+    const participantsSub = document.getElementById('participantsSub');
+    const participantsTbody = document.getElementById('participantsTbody');
+    const participantsMsg = document.getElementById('participantsMsg');
+    const backBtn = document.getElementById('backBtn');
+    let currentEventCode = null;
 
     let token = sessionStorage.getItem('bilca-admin-token') || '';
     let events = [];
@@ -180,6 +212,7 @@
             <td>${escapeHtml(ev.host)}</td>
             <td><button class="ghost small" onclick="copyLink('${link}', this)">Copiar link</button></td>
             <td class="actions">
+                <button class="ghost small" onclick="viewParticipants('${ev.code}', '${escapeAttr(ev.name)}')">Participantes</button>
                 <button class="ghost small" onclick="startEdit('${ev.code}')">Editar</button>
                 <button class="danger small" onclick="removeEvent('${ev.code}')">Excluir</button>
             </td>
@@ -241,6 +274,57 @@
     };
 
     addBtn.addEventListener('click', () => { editingCode = NEW_ROW; setRowMsg(''); render(); });
+
+    window.viewParticipants = async (code, name) => {
+        currentEventCode = code;
+        participantsTitle.textContent = `Participantes · ${name}`;
+        participantsSub.textContent = '';
+        participantsMsg.textContent = '';
+        eventsPanel.style.display = 'none';
+        participantsPanel.style.display = 'block';
+        await loadParticipants();
+    };
+
+    backBtn.addEventListener('click', () => {
+        participantsPanel.style.display = 'none';
+        eventsPanel.style.display = 'block';
+    });
+
+    async function loadParticipants() {
+        participantsTbody.innerHTML = '<tr><td colspan="5" class="empty">Carregando…</td></tr>';
+        const response = await fetch(`/api/events/${encodeURIComponent(currentEventCode)}/participants`, { headers: authHeaders() });
+        if (!response.ok) {
+            participantsTbody.innerHTML = '<tr><td colspan="5" class="empty">Não foi possível carregar os participantes.</td></tr>';
+            return;
+        }
+        const participants = await response.json();
+        participantsSub.textContent = `${participants.length} inscrito(s)`;
+        if (!participants.length) {
+            participantsTbody.innerHTML = '<tr><td colspan="5" class="empty">Ninguém se inscreveu ainda.</td></tr>';
+            return;
+        }
+        participantsTbody.innerHTML = participants.map(p => `<tr>
+            <td>${escapeHtml(p.name)}</td>
+            <td>${escapeHtml(p.email)}</td>
+            <td>${escapeHtml(p.phone)}</td>
+            <td>${escapeHtml(p.stack)}</td>
+            <td class="actions"><button class="danger small" onclick="removeParticipant(${p.id})">Excluir</button></td>
+        </tr>`).join('');
+    }
+
+    window.removeParticipant = async (id) => {
+        if (!confirm('Excluir este participante?')) return;
+        const response = await fetch(`/api/events/${encodeURIComponent(currentEventCode)}/participants/${id}`, { method: 'DELETE', headers: authHeaders() });
+        if (response.ok || response.status === 204) {
+            participantsMsg.textContent = 'Participante excluído.';
+            participantsMsg.className = 'success';
+            await loadParticipants();
+        } else {
+            const result = await response.json().catch(() => ({}));
+            participantsMsg.textContent = result.message || 'Não foi possível excluir.';
+            participantsMsg.className = 'error';
+        }
+    };
 
     function unlock() {
         token = tokenInput.value.trim();

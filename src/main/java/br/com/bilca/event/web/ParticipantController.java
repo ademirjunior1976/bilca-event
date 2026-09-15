@@ -11,24 +11,28 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/events/{code}/participants")
 public class ParticipantController {
 
     private final EventRepository eventRepository;
     private final ParticipantRepository participantRepository;
+    private final AdminAuth adminAuth;
 
-    public ParticipantController(EventRepository eventRepository, ParticipantRepository participantRepository) {
+    public ParticipantController(EventRepository eventRepository, ParticipantRepository participantRepository,
+                                 AdminAuth adminAuth) {
         this.eventRepository = eventRepository;
         this.participantRepository = participantRepository;
+        this.adminAuth = adminAuth;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ParticipantResponse create(@PathVariable String code,
                                       @Valid @RequestBody CreateParticipantRequest request) {
-        Event event = eventRepository.findByPublicCode(code)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento não encontrado"));
+        Event event = findEventOrThrow(code);
 
         if (participantRepository.existsByEventIdAndEmailIgnoreCase(event.id(), request.email())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Este e-mail já está inscrito neste evento");
@@ -37,6 +41,31 @@ public class ParticipantController {
         Participant participant = participantRepository.save(
                 event.id(), request.name(), request.email(), request.phone(), request.stack());
         return ParticipantResponse.from(participant);
+    }
+
+    @GetMapping
+    public List<ParticipantResponse> list(@RequestHeader(value = "X-Admin-Token", required = false) String token,
+                                          @PathVariable String code) {
+        adminAuth.require(token);
+        Event event = findEventOrThrow(code);
+        return participantRepository.findByEventId(event.id()).stream().map(ParticipantResponse::from).toList();
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@RequestHeader(value = "X-Admin-Token", required = false) String token,
+                       @PathVariable String code, @PathVariable Long id) {
+        adminAuth.require(token);
+        Event event = findEventOrThrow(code);
+        int deleted = participantRepository.deleteByIdAndEventId(id, event.id());
+        if (deleted == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Participante não encontrado");
+        }
+    }
+
+    private Event findEventOrThrow(String code) {
+        return eventRepository.findByPublicCode(code)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento não encontrado"));
     }
 
     public record CreateParticipantRequest(

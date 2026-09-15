@@ -7,7 +7,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -20,35 +19,29 @@ public class EventController {
 
     private final EventRepository eventRepository;
     private final ParticipantRepository participantRepository;
-    private final String adminApiToken;
+    private final AdminAuth adminAuth;
 
     public EventController(EventRepository eventRepository,
                            ParticipantRepository participantRepository,
-                           @Value("${bilca.admin-api-token:}") String adminApiToken) {
+                           AdminAuth adminAuth) {
         this.eventRepository = eventRepository;
         this.participantRepository = participantRepository;
-        this.adminApiToken = adminApiToken;
+        this.adminAuth = adminAuth;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public EventResponse create(@RequestHeader(value = "X-Admin-Token", required = false) String token,
                                 @Valid @RequestBody CreateEventRequest request) {
-        requireAdmin(token);
+        adminAuth.require(token);
         Event event = eventRepository.save(request.name(), request.date(), request.host());
         return EventResponse.from(event);
     }
 
     @GetMapping
     public List<EventResponse> list(@RequestHeader(value = "X-Admin-Token", required = false) String token) {
-        requireAdmin(token);
+        adminAuth.require(token);
         return eventRepository.findAll().stream().map(EventResponse::from).toList();
-    }
-
-    private void requireAdmin(String token) {
-        if (adminApiToken.isBlank() || !adminApiToken.equals(token)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token administrativo inválido");
-        }
     }
 
     @GetMapping("/{code}")
@@ -62,7 +55,7 @@ public class EventController {
     public EventResponse update(@RequestHeader(value = "X-Admin-Token", required = false) String token,
                                 @PathVariable String code,
                                 @Valid @RequestBody CreateEventRequest request) {
-        requireAdmin(token);
+        adminAuth.require(token);
         eventRepository.findByPublicCode(code)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento não encontrado"));
         eventRepository.update(code, request.name(), request.date(), request.host());
@@ -73,7 +66,7 @@ public class EventController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@RequestHeader(value = "X-Admin-Token", required = false) String token,
                        @PathVariable String code) {
-        requireAdmin(token);
+        adminAuth.require(token);
         Event event = eventRepository.findByPublicCode(code)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento não encontrado"));
         int participantCount = participantRepository.countByEventId(event.id());
