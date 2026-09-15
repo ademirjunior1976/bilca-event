@@ -72,6 +72,7 @@
         button.small { padding: 7px 12px; font-size: 12px; }
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 12px 10px; border-bottom: 1.5px solid var(--border); }
+        th.wide { min-width: 30ch; }
         td { padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
         tr:last-child td { border-bottom: none; }
         td input { padding: 8px 9px; font-size: 13px; min-width: 30ch; }
@@ -115,7 +116,7 @@
                 <div class="table-wrap">
                     <table>
                         <thead>
-                            <tr><th>Nome</th><th>Data</th><th>Host</th><th>Local</th><th>Link</th><th></th></tr>
+                            <tr><th class="wide">Nome</th><th>Data</th><th class="wide">Host</th><th class="wide">Local</th><th>Link</th><th></th></tr>
                         </thead>
                         <tbody id="tbody"></tbody>
                     </table>
@@ -137,7 +138,7 @@
                 <div class="table-wrap">
                     <table>
                         <thead>
-                            <tr><th>Nome</th><th>E-mail</th><th>Telefone</th><th>Stack</th><th></th></tr>
+                            <tr><th class="wide">Nome</th><th class="wide">E-mail</th><th class="wide">Telefone</th><th class="wide">Stack</th><th></th></tr>
                         </thead>
                         <tbody id="participantsTbody"></tbody>
                     </table>
