@@ -1,35 +1,44 @@
 # Bilca Event
 
-Site estático para cadastro de presença em palestras/eventos. Todos os participantes que se inscrevem concorrem aos brindes — não há sorteio, é confirmação de presença.
+MVP para cadastro de eventos e participantes usando Java, Spring Boot e Oracle.
 
-Sem backend, sem banco de dados: hospedado no GitHub Pages, e cada inscrição vira uma **issue** neste repositório (via [Issue Forms](https://docs.github.com/pt/issues/tracking-your-work-with-issues/using-issues/creating-an-issue-template-for-your-repository) do GitHub).
+## Executar localmente
 
-## Como funciona
+Defina as variáveis de conexão do Oracle:
 
-1. Você cadastra um evento em [`events.json`](events.json).
-2. O QR Code do evento aponta para `https://SEU_USUARIO.github.io/SEU_REPO/?evento=CODIGO`.
-3. O participante abre o link, vê os dados do evento e clica em "Confirmar presença".
-4. Isso abre uma nova issue neste repositório (o participante precisa estar logado no GitHub) já com o formulário de inscrição (nome, e-mail, telefone, stack) e com as labels `inscricao` e `evento-CODIGO`.
+```powershell
+$env:ORACLE_DATASOURCE_URL="jdbc:oracle:thin:@localhost:1521/XEPDB1"
+$env:ORACLE_DATASOURCE_USERNAME="event_app"
+$env:ORACLE_DATASOURCE_PASSWORD="sua-senha"
+mvn spring-boot:run
+```
 
-## Cadastrar um novo evento
+Depois acesse `http://localhost:8080`.
 
-Edite [`events.json`](events.json) e adicione um objeto novo:
+## API
 
-```json
+Criar evento:
+
+```http
+POST /api/events
+Content-Type: application/json
+X-Admin-Token: seu-token-administrativo
+
 {
-  "code": "meu-evento-2026",
-  "name": "Nome do evento",
-  "date": "2026-11-20",
+  "name": "Java e Oracle na prática",
+  "date": "2026-10-10",
   "host": "Seu nome"
 }
 ```
 
-Faça commit e push — o GitHub Pages atualiza automaticamente em alguns segundos.
+O campo `code` retornado identifica o evento. A página pública fica em `https://seu-dominio/?evento=CODE`.
 
-## Ver os participantes de um evento
+## Oracle Autonomous Database na OCI
 
-Vá em **Issues** neste repositório e filtre pela label `evento-CODIGO` (e `inscricao`). Cada issue é um participante inscrito.
+Para o Autonomous Database, envie a Wallet para a VM da aplicação e configure a URL usando o serviço do arquivo `tnsnames.ora`, por exemplo:
 
-## Publicar (primeira vez)
+```text
+jdbc:oracle:thin:@bilca_high?TNS_ADMIN=/opt/bilca-event/wallet
+```
 
-No repositório no GitHub: **Settings → Pages → Build and deployment → Deploy from a branch**, selecione a branch `main` e a pasta `/ (root)`.
+Nunca exponha a porta do Oracle para a internet. Libere acesso ao banco somente a partir da VM da aplicação e mantenha as credenciais em variáveis de ambiente ou em um serviço de segredos.

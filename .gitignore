@@ -14,6 +14,14 @@
 ### Mac OS ###
 .DS_Store
 
+### Maven ###
+target/
+*.log
+
+### Local configuration ###
+application-local.properties
+wallet/
+
 ### Secrets / keys ###
 *.key
 *.key.pub
