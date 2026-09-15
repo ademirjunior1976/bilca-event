@@ -33,11 +33,12 @@ scp target/bilca-event-0.0.1-SNAPSHOT.jar opc@SEU_IP:/tmp/app.jar
 ssh opc@SEU_IP "sudo mv /tmp/app.jar /opt/bilca-event/app/app.jar && sudo chown bilca:bilca /opt/bilca-event/app/app.jar"
 ```
 
-## 3. Configurar segredos e wallet
+## 3. Configurar segredos, wallet e schema
 
 1. Crie `/opt/bilca-event/.env` na VM a partir de `bilca-event.env.example`; preencha todos os segredos e execute `sudo chmod 600 /opt/bilca-event/.env` e `sudo chown bilca:bilca /opt/bilca-event/.env`.
 2. Para o Autonomous Database, baixe a Wallet em **Database connection** na console OCI, envie o `.zip` pra VM (`scp`) e extraia em `/opt/bilca-event/wallet`. Depois: `sudo chown -R bilca:bilca /opt/bilca-event/wallet && sudo chmod 700 /opt/bilca-event/wallet`.
 3. No `.env`, use o alias existente no `tnsnames.ora` da wallet (ex.: `bilcabd_medium`) na `ORACLE_DATASOURCE_URL`.
+4. Crie o usuário `event_app` no banco (uma vez, como ADMIN) e rode `schema.sql` (uma vez, como `event_app`) — mais fácil pelo **Database Actions** no navegador (`Autonomous Database > BilcaBD > Database connection > Database Actions > SQL`) do que via sqlplus, já que a porta 1522 costuma estar bloqueada em redes corporativas.
 
 ## 4. Servico systemd
 

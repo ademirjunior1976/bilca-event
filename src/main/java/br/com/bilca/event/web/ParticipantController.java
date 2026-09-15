@@ -30,12 +30,12 @@ public class ParticipantController {
         Event event = eventRepository.findByPublicCode(code)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento não encontrado"));
 
-        if (participantRepository.existsByEventIdAndEmailIgnoreCase(event.getId(), request.email())) {
+        if (participantRepository.existsByEventIdAndEmailIgnoreCase(event.id(), request.email())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Este e-mail já está inscrito neste evento");
         }
 
         Participant participant = participantRepository.save(
-                new Participant(event, request.name(), request.email(), request.phone(), request.stack()));
+                event.id(), request.name(), request.email(), request.phone(), request.stack());
         return ParticipantResponse.from(participant);
     }
 
@@ -48,8 +48,8 @@ public class ParticipantController {
 
     public record ParticipantResponse(Long id, String name, String email, String phone, String stack) {
         public static ParticipantResponse from(Participant participant) {
-            return new ParticipantResponse(participant.getId(), participant.getName(), participant.getEmail(),
-                    participant.getPhone(), participant.getStack());
+            return new ParticipantResponse(participant.id(), participant.name(), participant.email(),
+                    participant.phone(), participant.stack());
         }
     }
 }

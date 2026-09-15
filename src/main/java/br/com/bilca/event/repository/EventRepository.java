@@ -1,10 +1,44 @@
 package br.com.bilca.event.repository;
 
 import br.com.bilca.event.domain.Event;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
 
+import java.sql.Date;
+import java.time.LocalDate;
 import java.util.Optional;
+import java.util.UUID;
 
-public interface EventRepository extends JpaRepository<Event, Long> {
-    Optional<Event> findByPublicCode(String publicCode);
+@Repository
+public class EventRepository {
+
+    private static final RowMapper<Event> ROW_MAPPER = (rs, rowNum) -> new Event(
+            rs.getLong("id"),
+            rs.getString("public_code"),
+            rs.getString("name"),
+            rs.getDate("event_date").toLocalDate(),
+            rs.getString("event_host"));
+
+    private final JdbcTemplate jdbcTemplate;
+
+    public EventRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    public Event save(String name, LocalDate date, String host) {
+        Long id = jdbcTemplate.queryForObject("SELECT events_seq.NEXTVAL FROM dual", Long.class);
+        String publicCode = UUID.randomUUID().toString();
+        jdbcTemplate.update(
+                "INSERT INTO events (id, public_code, name, event_date, event_host) VALUES (?, ?, ?, ?, ?)",
+                id, publicCode, name, Date.valueOf(date), host);
+        return new Event(id, publicCode, name, date, host);
+    }
+
+    public Optional<Event> findByPublicCode(String publicCode) {
+        return jdbcTemplate.query(
+                        "SELECT id, public_code, name, event_date, event_host FROM events WHERE public_code = ?",
+                        ROW_MAPPER, publicCode)
+                .stream().findFirst();
+    }
 }

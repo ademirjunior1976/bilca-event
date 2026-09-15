@@ -30,9 +30,9 @@ public class EventController {
     public EventResponse create(@RequestHeader(value = "X-Admin-Token", required = false) String token,
                                 @Valid @RequestBody CreateEventRequest request) {
         if (adminApiToken.isBlank() || !adminApiToken.equals(token)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token administrativo invÃ¡lido");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token administrativo inválido");
         }
-        Event event = eventRepository.save(new Event(request.name(), request.date(), request.host()));
+        Event event = eventRepository.save(request.name(), request.date(), request.host());
         return EventResponse.from(event);
     }
 
@@ -51,7 +51,7 @@ public class EventController {
 
     public record EventResponse(Long id, String code, String name, LocalDate date, String host) {
         public static EventResponse from(Event event) {
-            return new EventResponse(event.getId(), event.getPublicCode(), event.getName(), event.getDate(), event.getHost());
+            return new EventResponse(event.id(), event.publicCode(), event.name(), event.date(), event.host());
         }
     }
 }
