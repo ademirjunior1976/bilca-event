@@ -244,8 +244,8 @@
             <td><button class="ghost small icon-btn" title="Copiar link" onclick="copyLink('${link}', this)">${icon('link')}</button></td>
             <td class="actions">
                 <button class="ghost small icon-btn" title="Participantes" onclick="viewParticipants('${ev.code}', '${escapeAttr(ev.name)}')">${icon('users')}</button>
-                <button class="ghost small icon-btn" title="Editar" onclick="startEdit('${ev.code}')">${icon('edit')}</button>
                 <button class="ghost small icon-btn" title="Exportar CSV" onclick="exportEvent('${ev.code}', this)">${icon('download')}</button>
+                <button class="ghost small icon-btn" title="Editar" onclick="startEdit('${ev.code}')">${icon('edit')}</button>
                 <button class="danger small icon-btn" title="Excluir" onclick="removeEvent('${ev.code}')">${icon('trash')}</button>
             </td>
         </tr>`;
