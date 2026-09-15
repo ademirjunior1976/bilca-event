@@ -60,6 +60,7 @@
             box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
         }
         button {
+            display: inline-flex; align-items: center; gap: 6px;
             padding: 10px 16px; font-size: 13px; font-weight: 600;
             color: white; background: var(--accent); border: 0; border-radius: 9px; cursor: pointer;
         }
@@ -70,6 +71,10 @@
         button.danger { background: transparent; color: var(--error); border: 1.5px solid color-mix(in srgb, var(--error) 40%, var(--border)); }
         button.danger:hover { background: color-mix(in srgb, var(--error) 10%, transparent); }
         button.small { padding: 7px 12px; font-size: 12px; }
+        button svg { width: 15px; height: 15px; flex-shrink: 0; }
+        button.icon-btn { padding: 0; width: 32px; height: 32px; justify-content: center; border-radius: 8px; }
+        button.icon-btn.small { width: 28px; height: 28px; }
+        button.icon-btn svg { width: 16px; height: 16px; }
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 12px 10px; border-bottom: 1.5px solid var(--border); white-space: nowrap; }
         th.wide { min-width: 30ch; }
@@ -118,7 +123,7 @@
                     <h1>Eventos</h1>
                     <p class="meta">Crie, edite e exclua eventos direto na lista.</p>
                 </div>
-                <button id="addBtn">+ Incluir evento</button>
+                <button id="addBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Incluir evento</button>
             </div>
 
             <div class="card">
@@ -140,7 +145,7 @@
                     <h1 id="participantsTitle">Participantes</h1>
                     <p class="meta" id="participantsSub"></p>
                 </div>
-                <button class="ghost" id="backBtn">← Voltar aos eventos</button>
+                <button class="ghost" id="backBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Voltar</button>
             </div>
 
             <div class="card">
@@ -177,6 +182,19 @@
     let currentEventCode = null;
     let editingParticipantId = null;
     let currentParticipants = [];
+
+    const ICONS = {
+        users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+        edit: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/>',
+        download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+        trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+        link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+        check: '<polyline points="20 6 9 17 4 12"/>',
+        x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
+    };
+    function icon(name) {
+        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
+    }
 
     let token = sessionStorage.getItem('bilca-admin-token') || '';
     let events = [];
@@ -223,12 +241,12 @@
             <td>${escapeHtml(ev.date)}</td>
             <td>${escapeHtml(ev.host)}</td>
             <td>${escapeHtml(ev.location)}</td>
-            <td><button class="ghost small" onclick="copyLink('${link}', this)">Copiar link</button></td>
+            <td><button class="ghost small icon-btn" title="Copiar link" onclick="copyLink('${link}', this)">${icon('link')}</button></td>
             <td class="actions">
-                <button class="ghost small" onclick="viewParticipants('${ev.code}', '${escapeAttr(ev.name)}')">Participantes</button>
-                <button class="ghost small" onclick="startEdit('${ev.code}')">Editar</button>
-                <button class="ghost small" onclick="exportEvent('${ev.code}')">Exportar CSV</button>
-                <button class="danger small" onclick="removeEvent('${ev.code}')">Excluir</button>
+                <button class="ghost small icon-btn" title="Participantes" onclick="viewParticipants('${ev.code}', '${escapeAttr(ev.name)}')">${icon('users')}</button>
+                <button class="ghost small icon-btn" title="Editar" onclick="startEdit('${ev.code}')">${icon('edit')}</button>
+                <button class="ghost small icon-btn" title="Exportar CSV" onclick="exportEvent('${ev.code}', this)">${icon('download')}</button>
+                <button class="danger small icon-btn" title="Excluir" onclick="removeEvent('${ev.code}')">${icon('trash')}</button>
             </td>
         </tr>`;
     }
@@ -241,8 +259,8 @@
             <td><input id="edit-location" value="${escapeAttr(ev.location)}" placeholder="Local"></td>
             <td class="empty">—</td>
             <td class="actions">
-                <button class="small" onclick="saveEdit('${isNew ? NEW_ROW : ev.code}')">Salvar</button>
-                <button class="ghost small" onclick="cancelEdit()">Cancelar</button>
+                <button class="small icon-btn" title="Salvar" onclick="saveEdit('${isNew ? NEW_ROW : ev.code}')">${icon('check')}</button>
+                <button class="ghost small icon-btn" title="Cancelar" onclick="cancelEdit()">${icon('x')}</button>
             </td>
         </tr>`;
     }
@@ -252,9 +270,9 @@
 
     window.copyLink = (link, btn) => {
         navigator.clipboard.writeText(link);
-        const original = btn.textContent;
-        btn.textContent = 'Copiado!';
-        setTimeout(() => btn.textContent = original, 1500);
+        const original = btn.innerHTML;
+        btn.innerHTML = icon('check');
+        setTimeout(() => btn.innerHTML = original, 1500);
     };
 
     window.saveEdit = async (code) => {
@@ -291,7 +309,7 @@
 
     addBtn.addEventListener('click', () => { editingCode = NEW_ROW; setRowMsg(''); render(); });
 
-    window.exportEvent = async (code) => {
+    window.exportEvent = async (code, btn) => {
         const ev = events.find(e => e.code === code);
         const response = await fetch(`/api/events/${encodeURIComponent(code)}/participants`, { headers: authHeaders() });
         if (!response.ok) { setRowMsg('Não foi possível exportar.', 'error'); return; }
@@ -314,6 +332,11 @@
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
+        if (btn) {
+            const original = btn.innerHTML;
+            btn.innerHTML = icon('check');
+            setTimeout(() => btn.innerHTML = original, 1500);
+        }
     };
 
     function csvRow(values) {
@@ -368,8 +391,8 @@
             <td>${escapeHtml(p.phone)}</td>
             <td>${escapeHtml(p.stack)}</td>
             <td class="actions">
-                <button class="ghost small" onclick="startEditParticipant(${p.id})">Editar</button>
-                <button class="danger small" onclick="removeParticipant(${p.id})">Excluir</button>
+                <button class="ghost small icon-btn" title="Editar" onclick="startEditParticipant(${p.id})">${icon('edit')}</button>
+                <button class="danger small icon-btn" title="Excluir" onclick="removeParticipant(${p.id})">${icon('trash')}</button>
             </td>
         </tr>`;
     }
@@ -381,8 +404,8 @@
             <td><input id="pedit-phone" value="${escapeAttr(p.phone)}"></td>
             <td><input id="pedit-stack" value="${escapeAttr(p.stack)}"></td>
             <td class="actions">
-                <button class="small" onclick="saveParticipantEdit(${p.id})">Salvar</button>
-                <button class="ghost small" onclick="cancelParticipantEdit()">Cancelar</button>
+                <button class="small icon-btn" title="Salvar" onclick="saveParticipantEdit(${p.id})">${icon('check')}</button>
+                <button class="ghost small icon-btn" title="Cancelar" onclick="cancelParticipantEdit()">${icon('x')}</button>
             </td>
         </tr>`;
     }
