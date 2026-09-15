@@ -78,9 +78,11 @@
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 12px 10px; border-bottom: 1.5px solid var(--border); white-space: nowrap; }
         th.wide { min-width: 30ch; }
+        th.datecol { min-width: 12ch; }
         td { padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; white-space: nowrap; }
         tr:last-child td { border-bottom: none; }
         td input { padding: 8px 9px; font-size: 13px; min-width: 30ch; }
+        td input[type="date"] { min-width: 12ch; }
         .actions { display: flex; gap: 8px; justify-content: flex-end; white-space: nowrap; }
         .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 0; white-space: normal; }
         #tokenMsg, #rowMsg { font-size: 13px; font-weight: 600; min-height: 18px; margin-top: 10px; }
@@ -130,7 +132,7 @@
                 <div class="table-wrap">
                     <table>
                         <thead>
-                            <tr><th class="wide">Nome</th><th>Data</th><th class="wide">Host</th><th class="wide">Local</th><th>Link</th><th></th></tr>
+                            <tr><th class="wide">Nome</th><th class="datecol">Data</th><th class="wide">Host</th><th class="wide">Local</th><th>Link</th><th></th></tr>
                         </thead>
                         <tbody id="tbody"></tbody>
                     </table>
@@ -196,6 +198,11 @@
         return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
     }
 
+    function formatDateBR(iso) {
+        const [y, m, d] = String(iso).split('-');
+        return y && m && d ? `${d}/${m}/${y}` : iso;
+    }
+
     let token = sessionStorage.getItem('bilca-admin-token') || '';
     let events = [];
     let editingCode = null;
@@ -238,7 +245,7 @@
         const link = `${location.origin}/?evento=${encodeURIComponent(ev.code)}`;
         return `<tr>
             <td>${escapeHtml(ev.name)}</td>
-            <td>${escapeHtml(ev.date)}</td>
+            <td>${escapeHtml(formatDateBR(ev.date))}</td>
             <td>${escapeHtml(ev.host)}</td>
             <td>${escapeHtml(ev.location)}</td>
             <td><button class="ghost small icon-btn" title="Copiar link" onclick="copyLink('${link}', this)">${icon('link')}</button></td>
@@ -317,7 +324,7 @@
 
         const csvLines = [
             'Evento;Data;Host;Local',
-            csvRow([ev.name, ev.date, ev.host, ev.location]),
+            csvRow([ev.name, formatDateBR(ev.date), ev.host, ev.location]),
             '',
             'Nome;E-mail;Telefone;Stack'
         ];
