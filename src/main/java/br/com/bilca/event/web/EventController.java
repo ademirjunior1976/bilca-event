@@ -34,7 +34,7 @@ public class EventController {
     public EventResponse create(@RequestHeader(value = "X-Admin-Token", required = false) String token,
                                 @Valid @RequestBody CreateEventRequest request) {
         adminAuth.require(token);
-        Event event = eventRepository.save(request.name(), request.date(), request.host());
+        Event event = eventRepository.save(request.name(), request.date(), request.host(), request.location());
         return EventResponse.from(event);
     }
 
@@ -58,7 +58,7 @@ public class EventController {
         adminAuth.require(token);
         eventRepository.findByPublicCode(code)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento não encontrado"));
-        eventRepository.update(code, request.name(), request.date(), request.host());
+        eventRepository.update(code, request.name(), request.date(), request.host(), request.location());
         return eventRepository.findByPublicCode(code).map(EventResponse::from).orElseThrow();
     }
 
@@ -80,12 +80,13 @@ public class EventController {
     public record CreateEventRequest(
             @NotBlank(message = "Nome é obrigatório") String name,
             @NotNull(message = "Data é obrigatória") LocalDate date,
-            @NotBlank(message = "Host é obrigatório") String host) {
+            @NotBlank(message = "Host é obrigatório") String host,
+            @NotBlank(message = "Local é obrigatório") String location) {
     }
 
-    public record EventResponse(Long id, String code, String name, LocalDate date, String host) {
+    public record EventResponse(Long id, String code, String name, LocalDate date, String host, String location) {
         public static EventResponse from(Event event) {
-            return new EventResponse(event.id(), event.publicCode(), event.name(), event.date(), event.host());
+            return new EventResponse(event.id(), event.publicCode(), event.name(), event.date(), event.host(), event.location());
         }
     }
 }

@@ -19,7 +19,8 @@ public class EventRepository {
             rs.getString("public_code"),
             rs.getString("name"),
             rs.getDate("event_date").toLocalDate(),
-            rs.getString("event_host"));
+            rs.getString("event_host"),
+            rs.getString("event_location"));
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -27,32 +28,32 @@ public class EventRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public Event save(String name, LocalDate date, String host) {
+    public Event save(String name, LocalDate date, String host, String location) {
         Long id = jdbcTemplate.queryForObject("SELECT events_seq.NEXTVAL FROM dual", Long.class);
         String publicCode = UUID.randomUUID().toString();
         jdbcTemplate.update(
-                "INSERT INTO events (id, public_code, name, event_date, event_host) VALUES (?, ?, ?, ?, ?)",
-                id, publicCode, name, Date.valueOf(date), host);
-        return new Event(id, publicCode, name, date, host);
+                "INSERT INTO events (id, public_code, name, event_date, event_host, event_location) VALUES (?, ?, ?, ?, ?, ?)",
+                id, publicCode, name, Date.valueOf(date), host, location);
+        return new Event(id, publicCode, name, date, host, location);
     }
 
     public Optional<Event> findByPublicCode(String publicCode) {
         return jdbcTemplate.query(
-                        "SELECT id, public_code, name, event_date, event_host FROM events WHERE public_code = ?",
+                        "SELECT id, public_code, name, event_date, event_host, event_location FROM events WHERE public_code = ?",
                         ROW_MAPPER, publicCode)
                 .stream().findFirst();
     }
 
     public List<Event> findAll() {
         return jdbcTemplate.query(
-                "SELECT id, public_code, name, event_date, event_host FROM events ORDER BY id DESC",
+                "SELECT id, public_code, name, event_date, event_host, event_location FROM events ORDER BY id DESC",
                 ROW_MAPPER);
     }
 
-    public int update(String publicCode, String name, LocalDate date, String host) {
+    public int update(String publicCode, String name, LocalDate date, String host, String location) {
         return jdbcTemplate.update(
-                "UPDATE events SET name = ?, event_date = ?, event_host = ? WHERE public_code = ?",
-                name, Date.valueOf(date), host, publicCode);
+                "UPDATE events SET name = ?, event_date = ?, event_host = ?, event_location = ? WHERE public_code = ?",
+                name, Date.valueOf(date), host, location, publicCode);
     }
 
     public int deleteByPublicCode(String publicCode) {

@@ -5,11 +5,12 @@ CREATE SEQUENCE events_seq START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE participants_seq START WITH 1 INCREMENT BY 1;
 
 CREATE TABLE events (
-    id          NUMBER PRIMARY KEY,
-    public_code VARCHAR2(36) NOT NULL UNIQUE,
-    name        VARCHAR2(150) NOT NULL,
-    event_date  DATE NOT NULL,
-    event_host  VARCHAR2(150) NOT NULL
+    id             NUMBER PRIMARY KEY,
+    public_code    VARCHAR2(36) NOT NULL UNIQUE,
+    name           VARCHAR2(150) NOT NULL,
+    event_date     DATE NOT NULL,
+    event_host     VARCHAR2(150) NOT NULL,
+    event_location VARCHAR2(200) NOT NULL
 );
 
 CREATE TABLE participants (

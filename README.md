@@ -27,7 +27,8 @@ X-Admin-Token: seu-token-administrativo
 {
   "name": "Java e Oracle na prática",
   "date": "2026-10-10",
-  "host": "Seu nome"
+  "host": "Seu nome",
+  "location": "Auditório Central"
 }
 ```
 

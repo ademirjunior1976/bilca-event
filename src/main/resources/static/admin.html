@@ -115,7 +115,7 @@
                 <div class="table-wrap">
                     <table>
                         <thead>
-                            <tr><th>Nome</th><th>Data</th><th>Host</th><th>Link</th><th></th></tr>
+                            <tr><th>Nome</th><th>Data</th><th>Host</th><th>Local</th><th>Link</th><th></th></tr>
                         </thead>
                         <tbody id="tbody"></tbody>
                     </table>
@@ -183,10 +183,10 @@
     }
 
     async function loadEvents() {
-        tbody.innerHTML = '<tr><td colspan="5" class="empty">Carregando…</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="empty">Carregando…</td></tr>';
         const response = await fetch('/api/events', { headers: authHeaders() });
         if (!response.ok) {
-            tbody.innerHTML = '<tr><td colspan="5" class="empty">Não foi possível carregar os eventos.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="empty">Não foi possível carregar os eventos.</td></tr>';
             return;
         }
         events = await response.json();
@@ -195,11 +195,11 @@
 
     function render() {
         if (!events.length && editingCode !== NEW_ROW) {
-            tbody.innerHTML = '<tr><td colspan="5" class="empty">Nenhum evento cadastrado ainda.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="empty">Nenhum evento cadastrado ainda.</td></tr>';
             return;
         }
         const rows = [];
-        if (editingCode === NEW_ROW) rows.push(renderEditRow({ code: NEW_ROW, name: '', date: '', host: '' }, true));
+        if (editingCode === NEW_ROW) rows.push(renderEditRow({ code: NEW_ROW, name: '', date: '', host: '', location: '' }, true));
         for (const ev of events) {
             rows.push(editingCode === ev.code ? renderEditRow(ev, false) : renderViewRow(ev));
         }
@@ -212,6 +212,7 @@
             <td>${escapeHtml(ev.name)}</td>
             <td>${escapeHtml(ev.date)}</td>
             <td>${escapeHtml(ev.host)}</td>
+            <td>${escapeHtml(ev.location)}</td>
             <td><button class="ghost small" onclick="copyLink('${link}', this)">Copiar link</button></td>
             <td class="actions">
                 <button class="ghost small" onclick="viewParticipants('${ev.code}', '${escapeAttr(ev.name)}')">Participantes</button>
@@ -227,6 +228,7 @@
             <td><input id="edit-name" value="${escapeAttr(ev.name)}" placeholder="Nome do evento"></td>
             <td><input id="edit-date" type="date" value="${escapeAttr(ev.date)}"></td>
             <td><input id="edit-host" value="${escapeAttr(ev.host)}" placeholder="Host"></td>
+            <td><input id="edit-location" value="${escapeAttr(ev.location)}" placeholder="Local"></td>
             <td class="empty">—</td>
             <td class="actions">
                 <button class="small" onclick="saveEdit('${isNew ? NEW_ROW : ev.code}')">Salvar</button>
@@ -249,7 +251,8 @@
         const body = {
             name: document.getElementById('edit-name').value,
             date: document.getElementById('edit-date').value,
-            host: document.getElementById('edit-host').value
+            host: document.getElementById('edit-host').value,
+            location: document.getElementById('edit-location').value
         };
         const isNew = code === NEW_ROW;
         const url = isNew ? '/api/events' : `/api/events/${encodeURIComponent(code)}`;
@@ -285,8 +288,8 @@
         const participants = await response.json();
 
         const csvLines = [
-            'Evento;Data;Host',
-            csvRow([ev.name, ev.date, ev.host]),
+            'Evento;Data;Host;Local',
+            csvRow([ev.name, ev.date, ev.host, ev.location]),
             '',
             'Nome;E-mail;Telefone;Stack'
         ];

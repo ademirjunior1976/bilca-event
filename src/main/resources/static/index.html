@@ -151,7 +151,7 @@
             .then(event => {
                 title.textContent = event.name;
                 const date = new Date(event.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-                eventInfo.textContent = `${date} · Host: ${event.host}`;
+                eventInfo.textContent = `${date} · ${event.location} · Host: ${event.host}`;
             })
             .catch(() => {
                 title.textContent = 'Evento não encontrado';
