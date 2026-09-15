@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,5 +41,21 @@ public class EventRepository {
                         "SELECT id, public_code, name, event_date, event_host FROM events WHERE public_code = ?",
                         ROW_MAPPER, publicCode)
                 .stream().findFirst();
+    }
+
+    public List<Event> findAll() {
+        return jdbcTemplate.query(
+                "SELECT id, public_code, name, event_date, event_host FROM events ORDER BY id DESC",
+                ROW_MAPPER);
+    }
+
+    public int update(String publicCode, String name, LocalDate date, String host) {
+        return jdbcTemplate.update(
+                "UPDATE events SET name = ?, event_date = ?, event_host = ? WHERE public_code = ?",
+                name, Date.valueOf(date), host, publicCode);
+    }
+
+    public int deleteByPublicCode(String publicCode) {
+        return jdbcTemplate.update("DELETE FROM events WHERE public_code = ?", publicCode);
     }
 }

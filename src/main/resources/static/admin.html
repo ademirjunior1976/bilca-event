@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bilca Event · Admin</title>
+    <style>
+        :root {
+            --bg: #f4f5fb;
+            --card: #ffffff;
+            --border: #e4e7f2;
+            --text: #171923;
+            --muted: #6b7280;
+            --accent: #4f46e5;
+            --accent-hover: #4338ca;
+            --success: #16a34a;
+            --error: #dc2626;
+            --shadow: 0 20px 45px -20px rgba(30, 27, 75, 0.25);
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f1117;
+                --card: #171a23;
+                --border: #262b38;
+                --text: #f2f3f7;
+                --muted: #9298a8;
+                --accent: #818cf8;
+                --accent-hover: #6366f1;
+                --shadow: 0 20px 45px -20px rgba(0, 0, 0, 0.6);
+            }
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh; padding: 32px 16px;
+            background: var(--bg); color: var(--text);
+            font-family: Verdana, Geneva, sans-serif;
+        }
+        .wrap { max-width: 880px; margin: 0 auto; }
+        .badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 13px; font-weight: 600; color: var(--accent);
+            background: color-mix(in srgb, var(--accent) 12%, transparent);
+            padding: 6px 12px; border-radius: 999px; margin-bottom: 16px;
+        }
+        .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+        h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.02em; }
+        .meta { color: var(--muted); font-size: 13px; margin: 0; }
+        .card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+            padding: 8px 24px 24px; box-shadow: var(--shadow); margin-bottom: 20px;
+        }
+        .field { margin-bottom: 14px; }
+        label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+        input {
+            width: 100%; padding: 10px 11px; font-size: 14px; border-radius: 9px;
+            border: 1.5px solid var(--border); background: var(--bg); color: var(--text);
+        }
+        input:focus {
+            outline: none; border-color: var(--accent);
+            box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+        }
+        button {
+            padding: 10px 16px; font-size: 13px; font-weight: 600;
+            color: white; background: var(--accent); border: 0; border-radius: 9px; cursor: pointer;
+        }
+        button:hover { background: var(--accent-hover); }
+        button:disabled { opacity: .6; cursor: default; }
+        button.ghost { background: transparent; color: var(--text); border: 1.5px solid var(--border); }
+        button.ghost:hover { background: var(--bg); }
+        button.danger { background: transparent; color: var(--error); border: 1.5px solid color-mix(in srgb, var(--error) 40%, var(--border)); }
+        button.danger:hover { background: color-mix(in srgb, var(--error) 10%, transparent); }
+        button.small { padding: 7px 12px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 12px 10px; border-bottom: 1.5px solid var(--border); }
+        td { padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        td input { padding: 8px 9px; font-size: 13px; }
+        .actions { display: flex; gap: 8px; justify-content: flex-end; white-space: nowrap; }
+        .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 0; }
+        #tokenMsg, #rowMsg { font-size: 13px; font-weight: 600; min-height: 18px; margin-top: 10px; }
+        .success { color: var(--success); } .error { color: var(--error); }
+        footer { text-align: center; margin-top: 24px; font-size: 12px; color: var(--muted); }
+        #gate .card { max-width: 360px; margin: 60px auto 0; padding-top: 20px; }
+        .table-wrap { overflow-x: auto; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <span class="badge">🛠️ Administração</span>
+
+    <div id="gate">
+        <h1>Eventos</h1>
+        <p class="meta">Entre com o token administrativo.</p>
+        <div class="card" style="padding-top:20px">
+            <div class="field">
+                <label for="token">X-Admin-Token</label>
+                <input id="token" type="password" placeholder="cole o token aqui">
+            </div>
+            <button id="unlockBtn">Entrar</button>
+            <div id="tokenMsg"></div>
+        </div>
+    </div>
+
+    <div id="app" style="display:none">
+        <div class="top">
+            <div>
+                <h1>Eventos</h1>
+                <p class="meta">Crie, edite e exclua eventos direto na lista.</p>
+            </div>
+            <button id="addBtn">+ Incluir evento</button>
+        </div>
+
+        <div class="card">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Nome</th><th>Data</th><th>Host</th><th>Link</th><th></th></tr>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+            <div id="rowMsg"></div>
+        </div>
+    </div>
+    <footer>Bilca Systems</footer>
+</div>
+
+<script>
+    const gate = document.getElementById('gate');
+    const app = document.getElementById('app');
+    const tokenInput = document.getElementById('token');
+    const tokenMsg = document.getElementById('tokenMsg');
+    const tbody = document.getElementById('tbody');
+    const rowMsg = document.getElementById('rowMsg');
+    const addBtn = document.getElementById('addBtn');
+
+    let token = sessionStorage.getItem('bilca-admin-token') || '';
+    let events = [];
+    let editingCode = null;
+    const NEW_ROW = '__new__';
+
+    function authHeaders() {
+        return { 'X-Admin-Token': token, 'Content-Type': 'application/json' };
+    }
+
+    function setRowMsg(text, type) {
+        rowMsg.textContent = text || '';
+        rowMsg.className = type || '';
+    }
+
+    async function loadEvents() {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty">Carregando…</td></tr>';
+        const response = await fetch('/api/events', { headers: authHeaders() });
+        if (!response.ok) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty">Não foi possível carregar os eventos.</td></tr>';
+            return;
+        }
+        events = await response.json();
+        render();
+    }
+
+    function render() {
+        if (!events.length && editingCode !== NEW_ROW) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty">Nenhum evento cadastrado ainda.</td></tr>';
+            return;
+        }
+        const rows = [];
+        if (editingCode === NEW_ROW) rows.push(renderEditRow({ code: NEW_ROW, name: '', date: '', host: '' }, true));
+        for (const ev of events) {
+            rows.push(editingCode === ev.code ? renderEditRow(ev, false) : renderViewRow(ev));
+        }
+        tbody.innerHTML = rows.join('');
+    }
+
+    function renderViewRow(ev) {
+        const link = `${location.origin}/?evento=${encodeURIComponent(ev.code)}`;
+        return `<tr>
+            <td>${escapeHtml(ev.name)}</td>
+            <td>${escapeHtml(ev.date)}</td>
+            <td>${escapeHtml(ev.host)}</td>
+            <td><button class="ghost small" onclick="copyLink('${link}', this)">Copiar link</button></td>
+            <td class="actions">
+                <button class="ghost small" onclick="startEdit('${ev.code}')">Editar</button>
+                <button class="danger small" onclick="removeEvent('${ev.code}')">Excluir</button>
+            </td>
+        </tr>`;
+    }
+
+    function renderEditRow(ev, isNew) {
+        return `<tr>
+            <td><input id="edit-name" value="${escapeAttr(ev.name)}" placeholder="Nome do evento"></td>
+            <td><input id="edit-date" type="date" value="${escapeAttr(ev.date)}"></td>
+            <td><input id="edit-host" value="${escapeAttr(ev.host)}" placeholder="Host"></td>
+            <td class="empty">—</td>
+            <td class="actions">
+                <button class="small" onclick="saveEdit('${isNew ? NEW_ROW : ev.code}')">Salvar</button>
+                <button class="ghost small" onclick="cancelEdit()">Cancelar</button>
+            </td>
+        </tr>`;
+    }
+
+    window.startEdit = (code) => { editingCode = code; setRowMsg(''); render(); };
+    window.cancelEdit = () => { editingCode = null; setRowMsg(''); render(); };
+
+    window.copyLink = (link, btn) => {
+        navigator.clipboard.writeText(link);
+        const original = btn.textContent;
+        btn.textContent = 'Copiado!';
+        setTimeout(() => btn.textContent = original, 1500);
+    };
+
+    window.saveEdit = async (code) => {
+        const body = {
+            name: document.getElementById('edit-name').value,
+            date: document.getElementById('edit-date').value,
+            host: document.getElementById('edit-host').value
+        };
+        const isNew = code === NEW_ROW;
+        const url = isNew ? '/api/events' : `/api/events/${encodeURIComponent(code)}`;
+        const response = await fetch(url, { method: isNew ? 'POST' : 'PUT', headers: authHeaders(), body: JSON.stringify(body) });
+        const result = await response.json().catch(() => ({}));
+        if (response.ok) {
+            editingCode = null;
+            setRowMsg(isNew ? 'Evento criado!' : 'Evento atualizado!', 'success');
+            await loadEvents();
+        } else {
+            setRowMsg(result.message || 'Não foi possível salvar.', 'error');
+        }
+    };
+
+    window.removeEvent = async (code) => {
+        if (!confirm('Excluir este evento? Essa ação não pode ser desfeita.')) return;
+        const response = await fetch(`/api/events/${encodeURIComponent(code)}`, { method: 'DELETE', headers: authHeaders() });
+        if (response.ok || response.status === 204) {
+            setRowMsg('Evento excluído.', 'success');
+            await loadEvents();
+        } else {
+            const result = await response.json().catch(() => ({}));
+            setRowMsg(result.message || 'Não foi possível excluir.', 'error');
+        }
+    };
+
+    addBtn.addEventListener('click', () => { editingCode = NEW_ROW; setRowMsg(''); render(); });
+
+    function unlock() {
+        token = tokenInput.value.trim();
+        if (!token) return;
+        sessionStorage.setItem('bilca-admin-token', token);
+        gate.style.display = 'none';
+        app.style.display = 'block';
+        loadEvents();
+    }
+
+    document.getElementById('unlockBtn').addEventListener('click', unlock);
+    tokenInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') unlock(); });
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function escapeAttr(s) { return escapeHtml(s); }
+
+    if (token) { tokenInput.value = token; unlock(); }
+</script>
+</body>
+</html>

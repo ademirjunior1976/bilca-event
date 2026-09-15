@@ -27,4 +27,10 @@ public class ParticipantRepository {
                 id, eventId, name, email, phone, stack);
         return new Participant(id, eventId, name, email, phone, stack);
     }
+
+    public int countByEventId(Long eventId) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM participants WHERE event_id = ?", Integer.class, eventId);
+        return count == null ? 0 : count;
+    }
 }
