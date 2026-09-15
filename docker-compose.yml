@@ -1,0 +1,10 @@
+services:
+  bilca-event:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - /opt/bilca-event/.env
+    volumes:
+      - /opt/bilca-event/wallet:/opt/bilca-event/wallet:ro
+    ports:
+      - "127.0.0.1:8080:8080"
