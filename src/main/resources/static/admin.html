@@ -165,6 +165,8 @@
     const participantsMsg = document.getElementById('participantsMsg');
     const backBtn = document.getElementById('backBtn');
     let currentEventCode = null;
+    let editingParticipantId = null;
+    let currentParticipants = [];
 
     let token = sessionStorage.getItem('bilca-admin-token') || '';
     let events = [];
@@ -214,6 +216,7 @@
             <td class="actions">
                 <button class="ghost small" onclick="viewParticipants('${ev.code}', '${escapeAttr(ev.name)}')">Participantes</button>
                 <button class="ghost small" onclick="startEdit('${ev.code}')">Editar</button>
+                <button class="ghost small" onclick="exportEvent('${ev.code}')">Exportar CSV</button>
                 <button class="danger small" onclick="removeEvent('${ev.code}')">Excluir</button>
             </td>
         </tr>`;
@@ -275,8 +278,41 @@
 
     addBtn.addEventListener('click', () => { editingCode = NEW_ROW; setRowMsg(''); render(); });
 
+    window.exportEvent = async (code) => {
+        const ev = events.find(e => e.code === code);
+        const response = await fetch(`/api/events/${encodeURIComponent(code)}/participants`, { headers: authHeaders() });
+        if (!response.ok) { setRowMsg('Não foi possível exportar.', 'error'); return; }
+        const participants = await response.json();
+
+        const csvLines = [
+            'Evento;Data;Host',
+            csvRow([ev.name, ev.date, ev.host]),
+            '',
+            'Nome;E-mail;Telefone;Stack'
+        ];
+        for (const p of participants) csvLines.push(csvRow([p.name, p.email, p.phone, p.stack]));
+
+        const blob = new Blob(['﻿' + csvLines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `evento-${code}-participantes.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    };
+
+    function csvRow(values) {
+        return values.map(v => {
+            const s = String(v ?? '');
+            return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+        }).join(';');
+    }
+
     window.viewParticipants = async (code, name) => {
         currentEventCode = code;
+        editingParticipantId = null;
         participantsTitle.textContent = `Participantes · ${name}`;
         participantsSub.textContent = '';
         participantsMsg.textContent = '';
@@ -297,20 +333,71 @@
             participantsTbody.innerHTML = '<tr><td colspan="5" class="empty">Não foi possível carregar os participantes.</td></tr>';
             return;
         }
-        const participants = await response.json();
-        participantsSub.textContent = `${participants.length} inscrito(s)`;
-        if (!participants.length) {
+        currentParticipants = await response.json();
+        renderParticipants();
+    }
+
+    function renderParticipants() {
+        participantsSub.textContent = `${currentParticipants.length} inscrito(s)`;
+        if (!currentParticipants.length) {
             participantsTbody.innerHTML = '<tr><td colspan="5" class="empty">Ninguém se inscreveu ainda.</td></tr>';
             return;
         }
-        participantsTbody.innerHTML = participants.map(p => `<tr>
+        participantsTbody.innerHTML = currentParticipants.map(p =>
+            editingParticipantId === p.id ? renderParticipantEditRow(p) : renderParticipantViewRow(p)
+        ).join('');
+    }
+
+    function renderParticipantViewRow(p) {
+        return `<tr>
             <td>${escapeHtml(p.name)}</td>
             <td>${escapeHtml(p.email)}</td>
             <td>${escapeHtml(p.phone)}</td>
             <td>${escapeHtml(p.stack)}</td>
-            <td class="actions"><button class="danger small" onclick="removeParticipant(${p.id})">Excluir</button></td>
-        </tr>`).join('');
+            <td class="actions">
+                <button class="ghost small" onclick="startEditParticipant(${p.id})">Editar</button>
+                <button class="danger small" onclick="removeParticipant(${p.id})">Excluir</button>
+            </td>
+        </tr>`;
     }
+
+    function renderParticipantEditRow(p) {
+        return `<tr>
+            <td><input id="pedit-name" value="${escapeAttr(p.name)}"></td>
+            <td><input id="pedit-email" value="${escapeAttr(p.email)}"></td>
+            <td><input id="pedit-phone" value="${escapeAttr(p.phone)}"></td>
+            <td><input id="pedit-stack" value="${escapeAttr(p.stack)}"></td>
+            <td class="actions">
+                <button class="small" onclick="saveParticipantEdit(${p.id})">Salvar</button>
+                <button class="ghost small" onclick="cancelParticipantEdit()">Cancelar</button>
+            </td>
+        </tr>`;
+    }
+
+    window.startEditParticipant = (id) => { editingParticipantId = id; participantsMsg.textContent = ''; renderParticipants(); };
+    window.cancelParticipantEdit = () => { editingParticipantId = null; renderParticipants(); };
+
+    window.saveParticipantEdit = async (id) => {
+        const body = {
+            name: document.getElementById('pedit-name').value,
+            email: document.getElementById('pedit-email').value,
+            phone: document.getElementById('pedit-phone').value,
+            stack: document.getElementById('pedit-stack').value
+        };
+        const response = await fetch(`/api/events/${encodeURIComponent(currentEventCode)}/participants/${id}`, {
+            method: 'PUT', headers: authHeaders(), body: JSON.stringify(body)
+        });
+        const result = await response.json().catch(() => ({}));
+        if (response.ok) {
+            editingParticipantId = null;
+            participantsMsg.textContent = 'Participante atualizado!';
+            participantsMsg.className = 'success';
+            await loadParticipants();
+        } else {
+            participantsMsg.textContent = result.message || 'Não foi possível salvar.';
+            participantsMsg.className = 'error';
+        }
+    };
 
     window.removeParticipant = async (id) => {
         if (!confirm('Excluir este participante?')) return;

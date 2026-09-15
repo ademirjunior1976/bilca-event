@@ -51,6 +51,23 @@ public class ParticipantController {
         return participantRepository.findByEventId(event.id()).stream().map(ParticipantResponse::from).toList();
     }
 
+    @PutMapping("/{id}")
+    public ParticipantResponse update(@RequestHeader(value = "X-Admin-Token", required = false) String token,
+                                      @PathVariable String code, @PathVariable Long id,
+                                      @Valid @RequestBody CreateParticipantRequest request) {
+        adminAuth.require(token);
+        Event event = findEventOrThrow(code);
+        if (participantRepository.existsByEventIdAndEmailIgnoreCaseExcludingId(event.id(), request.email(), id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Este e-mail já está inscrito neste evento");
+        }
+        int updated = participantRepository.update(
+                id, event.id(), request.name(), request.email(), request.phone(), request.stack());
+        if (updated == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Participante não encontrado");
+        }
+        return new ParticipantResponse(id, request.name(), request.email(), request.phone(), request.stack());
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@RequestHeader(value = "X-Admin-Token", required = false) String token,

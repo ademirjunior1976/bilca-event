@@ -31,6 +31,13 @@ public class ParticipantRepository {
         return count != null && count > 0;
     }
 
+    public boolean existsByEventIdAndEmailIgnoreCaseExcludingId(Long eventId, String email, Long excludeId) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM participants WHERE event_id = ? AND UPPER(email) = UPPER(?) AND id != ?",
+                Integer.class, eventId, email, excludeId);
+        return count != null && count > 0;
+    }
+
     public Participant save(Long eventId, String name, String email, String phone, String stack) {
         Long id = jdbcTemplate.queryForObject("SELECT participants_seq.NEXTVAL FROM dual", Long.class);
         jdbcTemplate.update(
@@ -54,5 +61,11 @@ public class ParticipantRepository {
     public int deleteByIdAndEventId(Long id, Long eventId) {
         return jdbcTemplate.update(
                 "DELETE FROM participants WHERE id = ? AND event_id = ?", id, eventId);
+    }
+
+    public int update(Long id, Long eventId, String name, String email, String phone, String stack) {
+        return jdbcTemplate.update(
+                "UPDATE participants SET name = ?, email = ?, phone = ?, tech_stack = ? WHERE id = ? AND event_id = ?",
+                name, email, phone, stack, id, eventId);
     }
 }
