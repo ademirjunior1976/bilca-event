@@ -8,10 +8,11 @@ User=bilca
 Group=bilca
 WorkingDirectory=/opt/bilca-event/app
 EnvironmentFile=/opt/bilca-event/.env
-ExecStart=/usr/bin/java -jar /opt/bilca-event/app/app.jar
+ExecStart=/usr/bin/java -Xmx220m -Xss512k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -jar /opt/bilca-event/app/app.jar
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true
+PrivateTmp=true
 ProtectSystem=strict
 ReadWritePaths=/opt/bilca-event
 

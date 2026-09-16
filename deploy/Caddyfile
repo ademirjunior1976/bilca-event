@@ -1,0 +1,16 @@
+# Com dominio: troque SEU_DOMINIO abaixo (Caddy emite HTTPS automatico via Let's Encrypt).
+# Sem dominio, comente o bloco acima e descomente o bloco ":80" abaixo (HTTP direto no IP).
+
+SEU_DOMINIO {
+	request_body {
+		max_size 1MB
+	}
+	reverse_proxy 127.0.0.1:8080
+}
+
+# :80 {
+# 	request_body {
+# 		max_size 1MB
+# 	}
+# 	reverse_proxy 127.0.0.1:8080
+# }
