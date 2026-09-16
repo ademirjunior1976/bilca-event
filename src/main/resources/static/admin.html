@@ -147,7 +147,10 @@
                     <h1 id="participantsTitle">Participantes</h1>
                     <p class="meta" id="participantsSub"></p>
                 </div>
-                <button class="ghost" id="backBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Voltar</button>
+                <div class="actions">
+                    <button id="addParticipantBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Incluir participante</button>
+                    <button class="ghost" id="backBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Voltar</button>
+                </div>
             </div>
 
             <div class="card">
@@ -184,6 +187,7 @@
     let currentEventCode = null;
     let editingParticipantId = null;
     let currentParticipants = [];
+    const NEW_PARTICIPANT = '__new__';
 
     const ICONS = {
         users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
@@ -382,13 +386,18 @@
 
     function renderParticipants() {
         participantsSub.textContent = `${currentParticipants.length} inscrito(s)`;
-        if (!currentParticipants.length) {
+        if (!currentParticipants.length && editingParticipantId !== NEW_PARTICIPANT) {
             participantsTbody.innerHTML = '<tr><td colspan="5" class="empty">Ninguém se inscreveu ainda.</td></tr>';
             return;
         }
-        participantsTbody.innerHTML = currentParticipants.map(p =>
-            editingParticipantId === p.id ? renderParticipantEditRow(p) : renderParticipantViewRow(p)
-        ).join('');
+        const rows = [];
+        if (editingParticipantId === NEW_PARTICIPANT) {
+            rows.push(renderParticipantEditRow({ id: NEW_PARTICIPANT, name: '', email: '', phone: '', stack: '' }, true));
+        }
+        for (const p of currentParticipants) {
+            rows.push(editingParticipantId === p.id ? renderParticipantEditRow(p, false) : renderParticipantViewRow(p));
+        }
+        participantsTbody.innerHTML = rows.join('');
     }
 
     function renderParticipantViewRow(p) {
@@ -404,14 +413,14 @@
         </tr>`;
     }
 
-    function renderParticipantEditRow(p) {
+    function renderParticipantEditRow(p, isNew) {
         return `<tr>
-            <td><input id="pedit-name" value="${escapeAttr(p.name)}"></td>
-            <td><input id="pedit-email" value="${escapeAttr(p.email)}"></td>
-            <td><input id="pedit-phone" value="${escapeAttr(p.phone)}"></td>
-            <td><input id="pedit-stack" value="${escapeAttr(p.stack)}"></td>
+            <td><input id="pedit-name" value="${escapeAttr(p.name)}" placeholder="Nome completo"></td>
+            <td><input id="pedit-email" value="${escapeAttr(p.email)}" placeholder="E-mail"></td>
+            <td><input id="pedit-phone" value="${escapeAttr(p.phone)}" placeholder="Telefone"></td>
+            <td><input id="pedit-stack" value="${escapeAttr(p.stack)}" placeholder="Stack"></td>
             <td class="actions">
-                <button class="small icon-btn" title="Salvar" onclick="saveParticipantEdit(${p.id})">${icon('check')}</button>
+                <button class="small icon-btn" title="Salvar" onclick="saveParticipantEdit('${isNew ? NEW_PARTICIPANT : p.id}')">${icon('check')}</button>
                 <button class="ghost small icon-btn" title="Cancelar" onclick="cancelParticipantEdit()">${icon('x')}</button>
             </td>
         </tr>`;
@@ -420,6 +429,12 @@
     window.startEditParticipant = (id) => { editingParticipantId = id; participantsMsg.textContent = ''; renderParticipants(); };
     window.cancelParticipantEdit = () => { editingParticipantId = null; renderParticipants(); };
 
+    document.getElementById('addParticipantBtn').addEventListener('click', () => {
+        editingParticipantId = NEW_PARTICIPANT;
+        participantsMsg.textContent = '';
+        renderParticipants();
+    });
+
     window.saveParticipantEdit = async (id) => {
         const body = {
             name: document.getElementById('pedit-name').value,
@@ -427,13 +442,17 @@
             phone: document.getElementById('pedit-phone').value,
             stack: document.getElementById('pedit-stack').value
         };
-        const response = await fetch(`/api/events/${encodeURIComponent(currentEventCode)}/participants/${id}`, {
-            method: 'PUT', headers: authHeaders(), body: JSON.stringify(body)
+        const isNew = id === NEW_PARTICIPANT;
+        const url = isNew
+            ? `/api/events/${encodeURIComponent(currentEventCode)}/participants`
+            : `/api/events/${encodeURIComponent(currentEventCode)}/participants/${id}`;
+        const response = await fetch(url, {
+            method: isNew ? 'POST' : 'PUT', headers: authHeaders(), body: JSON.stringify(body)
         });
         const result = await response.json().catch(() => ({}));
         if (response.ok) {
             editingParticipantId = null;
-            participantsMsg.textContent = 'Participante atualizado!';
+            participantsMsg.textContent = isNew ? 'Participante incluído!' : 'Participante atualizado!';
             participantsMsg.className = 'success';
             await loadParticipants();
         } else {
