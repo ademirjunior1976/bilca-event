@@ -35,20 +35,22 @@ public class EventController {
                                 @Valid @RequestBody CreateEventRequest request) {
         adminAuth.require(token);
         Event event = eventRepository.save(request.name(), request.date(), request.host(), request.location());
-        return EventResponse.from(event);
+        return EventResponse.from(event, 0);
     }
 
     @GetMapping
     public List<EventResponse> list(@RequestHeader(value = "X-Admin-Token", required = false) String token) {
         adminAuth.require(token);
-        return eventRepository.findAll().stream().map(EventResponse::from).toList();
+        return eventRepository.findAll().stream()
+                .map(event -> EventResponse.from(event, participantRepository.countByEventId(event.id())))
+                .toList();
     }
 
     @GetMapping("/{code}")
     public EventResponse findByCode(@PathVariable String code) {
-        return eventRepository.findByPublicCode(code)
-                .map(EventResponse::from)
+        Event event = eventRepository.findByPublicCode(code)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento não encontrado"));
+        return EventResponse.from(event, participantRepository.countByEventId(event.id()));
     }
 
     @PutMapping("/{code}")
@@ -59,7 +61,8 @@ public class EventController {
         eventRepository.findByPublicCode(code)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento não encontrado"));
         eventRepository.update(code, request.name(), request.date(), request.host(), request.location());
-        return eventRepository.findByPublicCode(code).map(EventResponse::from).orElseThrow();
+        Event updated = eventRepository.findByPublicCode(code).orElseThrow();
+        return EventResponse.from(updated, participantRepository.countByEventId(updated.id()));
     }
 
     @DeleteMapping("/{code}")
@@ -84,9 +87,11 @@ public class EventController {
             @NotBlank(message = "Local é obrigatório") String location) {
     }
 
-    public record EventResponse(Long id, String code, String name, LocalDate date, String host, String location) {
-        public static EventResponse from(Event event) {
-            return new EventResponse(event.id(), event.publicCode(), event.name(), event.date(), event.host(), event.location());
+    public record EventResponse(Long id, String code, String name, LocalDate date, String host, String location,
+                                int participantCount) {
+        public static EventResponse from(Event event, int participantCount) {
+            return new EventResponse(event.id(), event.publicCode(), event.name(), event.date(), event.host(),
+                    event.location(), participantCount);
         }
     }
 }

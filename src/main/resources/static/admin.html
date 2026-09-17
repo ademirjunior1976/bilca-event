@@ -6,38 +6,59 @@
     <title>Bilca Event · Admin</title>
     <style>
         :root {
-            --bg: #f4f5fb;
+            --bg: #f7f7f8;
             --card: #ffffff;
-            --border: #e4e7f2;
-            --text: #171923;
-            --muted: #6b7280;
+            --border: #e7e7ea;
+            --text: #18181b;
+            --muted: #71717a;
             --accent: #4f46e5;
             --accent-hover: #4338ca;
-            --success: #16a34a;
+            --success: #059669;
             --error: #dc2626;
-            --shadow: 0 20px 45px -20px rgba(30, 27, 75, 0.25);
+            --shadow: 0 16px 32px -20px rgba(24, 24, 27, 0.18);
         }
         @media (prefers-color-scheme: dark) {
-            :root {
-                --bg: #0f1117;
-                --card: #171a23;
-                --border: #262b38;
-                --text: #f2f3f7;
-                --muted: #9298a8;
+            :root:not([data-theme="light"]) {
+                --bg: #18181b;
+                --card: #202023;
+                --border: #303034;
+                --text: #f4f4f5;
+                --muted: #a1a1aa;
                 --accent: #818cf8;
-                --accent-hover: #6366f1;
-                --shadow: 0 20px 45px -20px rgba(0, 0, 0, 0.6);
+                --accent-hover: #93c5fd;
+                --shadow: 0 16px 32px -20px rgba(0, 0, 0, 0.6);
             }
         }
+        :root[data-theme="dark"] {
+            --bg: #18181b;
+            --card: #202023;
+            --border: #303034;
+            --text: #f4f4f5;
+            --muted: #a1a1aa;
+            --accent: #818cf8;
+            --accent-hover: #93c5fd;
+            --shadow: 0 16px 32px -20px rgba(0, 0, 0, 0.6);
+        }
+        .theme-toggle {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; border-radius: 999px; flex-shrink: 0;
+            border: 1.5px solid var(--border); background: var(--card); color: var(--text);
+            cursor: pointer; font-size: 16px;
+        }
+        .theme-toggle:hover { border-color: var(--accent); }
         * { box-sizing: border-box; }
         body {
             margin: 0; min-height: 100vh; padding: 32px 16px;
             background: var(--bg); color: var(--text);
-            font-family: Verdana, Geneva, sans-serif;
+            font-family: -apple-system, "Segoe UI", Roboto, Inter, system-ui, sans-serif;
         }
         .wrap { max-width: 1200px; margin: 0 auto; }
+        .header-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; flex-wrap: wrap; margin-bottom: 24px;
+        }
         .brand {
-            display: flex; align-items: center; gap: 10px; margin-bottom: 24px;
+            display: flex; align-items: center; gap: 10px;
         }
         .brand-logo {
             width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
@@ -53,7 +74,7 @@
             display: inline-flex; align-items: center; gap: 6px;
             font-size: 13px; font-weight: 600; color: var(--accent);
             background: color-mix(in srgb, var(--accent) 12%, transparent);
-            padding: 6px 12px; border-radius: 999px; margin-bottom: 16px;
+            padding: 6px 12px; border-radius: 999px;
         }
         .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
         h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.02em; }
@@ -100,9 +121,47 @@
         .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 0; white-space: normal; }
         #tokenMsg, #rowMsg { font-size: 13px; font-weight: 600; min-height: 18px; margin-top: 10px; }
         .success { color: var(--success); } .error { color: var(--error); }
-        footer { text-align: center; margin-top: 24px; font-size: 12px; color: var(--muted); }
         #gate .card { max-width: 360px; margin: 60px auto 0; padding-top: 20px; }
         .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -24px; padding: 0 24px; width: calc(100% + 48px); }
+        .qr-overlay {
+            position: fixed; inset: 0; background: rgba(15, 17, 23, 0.55);
+            display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 100;
+        }
+        .qr-card {
+            background: var(--card); border-radius: 16px; padding: 24px;
+            box-shadow: var(--shadow); text-align: center; max-width: 320px; width: 100%;
+        }
+        .qr-link { font-size: 12px; color: var(--muted); word-break: break-all; margin: 14px 0; }
+        .qr-actions { display: flex; gap: 8px; justify-content: center; }
+
+        .events-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px;
+        }
+        .event-card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+            padding: 18px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 14px;
+        }
+        .event-card-top { display: flex; align-items: center; gap: 14px; }
+        .ring-wrap { position: relative; width: 60px; height: 60px; flex-shrink: 0; }
+        .ring-wrap svg { width: 60px; height: 60px; transform: rotate(-90deg); }
+        .ring-bg { fill: none; stroke: var(--border); stroke-width: 8; }
+        .ring-fg { fill: none; stroke: var(--accent); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset .5s ease; }
+        .ring-count {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            font-size: 17px; font-weight: 700;
+        }
+        .event-card-title { font-size: 15px; font-weight: 700; margin: 0 0 3px; line-height: 1.25; }
+        .event-card-meta { font-size: 12px; color: var(--muted); margin: 0; line-height: 1.4; }
+        .event-card-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; margin-top: auto; }
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(15, 17, 23, 0.55);
+            display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 100;
+        }
+        .modal-card {
+            background: var(--card); border-radius: 16px; padding: 24px;
+            box-shadow: var(--shadow); max-width: 380px; width: 100%;
+        }
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
 
         @media (max-width: 600px) {
             body { padding: 20px 12px; }
@@ -111,16 +170,41 @@
             .top { align-items: flex-start; }
             h1 { font-size: 20px; }
             .table-wrap { margin: 0 -16px; padding: 0 16px; width: calc(100% + 32px); }
+            .events-grid { grid-template-columns: 1fr; }
+            button { padding: 11px 16px; }
+            button.icon-btn { width: 36px; height: 36px; }
+            button.icon-btn.small { width: 32px; height: 32px; }
+
+            #participantsTbody { display: block; }
+            #participantsTbody tr {
+                display: block; border: 1px solid var(--border); border-radius: 12px;
+                padding: 10px 14px; margin-bottom: 12px;
+            }
+            #participantsTbody td {
+                display: block; border: none; padding: 6px 0; white-space: normal;
+            }
+            #participantsTbody td[data-label]::before {
+                content: attr(data-label); display: block; font-size: 11px; font-weight: 600;
+                color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px;
+            }
+            #participantsTbody td.actions { display: flex; justify-content: flex-end; padding-top: 8px; }
+            #participantsPanel thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+            #participantsPanel .table-wrap { overflow-x: visible; }
         }
     </style>
 </head>
 <body>
 <div class="wrap">
-    <div class="brand">
-        <span class="brand-logo"><img src="/images/bilca-systems-logo.png" alt="Bilca Systems"></span>
-        <span class="brand-name">Bilca Systems</span>
+    <div class="header-bar">
+        <div class="brand">
+            <span class="brand-logo"><img src="/images/bilca-systems-logo.png" alt="Bilca Systems"></span>
+            <span class="brand-name">Bilca Systems</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px">
+            <span class="badge">🛠️ Administração</span>
+            <button class="theme-toggle" id="themeToggle" title="Alternar tema" type="button">🌙</button>
+        </div>
     </div>
-    <span class="badge">🛠️ Administração</span>
 
     <div id="gate">
         <h1>Eventos</h1>
@@ -140,22 +224,12 @@
             <div class="top">
                 <div>
                     <h1>Eventos</h1>
-                    <p class="meta">Crie, edite e exclua eventos direto na lista.</p>
                 </div>
                 <button id="addBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Incluir evento</button>
             </div>
 
-            <div class="card">
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr><th class="wide">Nome</th><th class="datecol">Data</th><th class="wide">Host</th><th class="wide">Local</th><th>Link</th><th></th></tr>
-                        </thead>
-                        <tbody id="tbody"></tbody>
-                    </table>
-                </div>
-                <div id="rowMsg"></div>
-            </div>
+            <div id="eventsGrid" class="events-grid"></div>
+            <div id="rowMsg" style="margin-top:12px"></div>
         </div>
 
         <div id="participantsPanel" style="display:none">
@@ -168,6 +242,10 @@
                     <button id="addParticipantBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Incluir participante</button>
                     <button class="ghost" id="backBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Voltar</button>
                 </div>
+            </div>
+
+            <div class="field" style="max-width:340px">
+                <input id="participantSearch" type="search" placeholder="Buscar por nome, e-mail, telefone ou stack" autocomplete="off">
             </div>
 
             <div class="card">
@@ -183,15 +261,72 @@
             </div>
         </div>
     </div>
-    <footer>Bilca Systems</footer>
 </div>
 
+<div id="eventModal" class="modal-overlay" style="display:none">
+    <div class="modal-card">
+        <h2 id="eventModalTitle" style="margin:0 0 16px; font-size:18px">Novo evento</h2>
+        <div class="field">
+            <label for="em-name">Nome do evento</label>
+            <input id="em-name" placeholder="Nome do evento" autocomplete="off">
+        </div>
+        <div class="field">
+            <label for="em-date">Data</label>
+            <input id="em-date" type="date" autocomplete="off">
+        </div>
+        <div class="field">
+            <label for="em-host">Host</label>
+            <input id="em-host" placeholder="Host" autocomplete="off">
+        </div>
+        <div class="field">
+            <label for="em-location">Local</label>
+            <input id="em-location" placeholder="Local" autocomplete="off">
+        </div>
+        <div id="eventModalMsg"></div>
+        <div class="modal-actions">
+            <button class="ghost small" id="eventModalCancelBtn">Cancelar</button>
+            <button class="small" id="eventModalSaveBtn">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<div id="qrOverlay" class="qr-overlay" style="display:none">
+    <div class="qr-card">
+        <img id="qrImg" alt="QR Code do link" style="max-width:100%; height:auto; border-radius:8px">
+        <p class="qr-link" id="qrLinkText"></p>
+        <div class="qr-actions">
+            <button class="ghost small" id="qrCopyBtn">Copiar link</button>
+            <button class="ghost small" id="qrCloseBtn">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
+    (function() {
+        const btn = document.getElementById('themeToggle');
+        let saved = null;
+        try { saved = localStorage.getItem('bilca-theme'); } catch (e) {}
+        if (saved) document.documentElement.setAttribute('data-theme', saved);
+        function currentTheme() {
+            return document.documentElement.getAttribute('data-theme') ||
+                (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        }
+        function updateIcon() { btn.textContent = currentTheme() === 'dark' ? '☀️' : '🌙'; }
+        updateIcon();
+        btn.addEventListener('click', () => {
+            const next = currentTheme() === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            try { localStorage.setItem('bilca-theme', next); } catch (e) {}
+            updateIcon();
+        });
+    })();
+
     const gate = document.getElementById('gate');
     const app = document.getElementById('app');
     const tokenInput = document.getElementById('token');
     const tokenMsg = document.getElementById('tokenMsg');
-    const tbody = document.getElementById('tbody');
+    const eventsGrid = document.getElementById('eventsGrid');
     const rowMsg = document.getElementById('rowMsg');
     const addBtn = document.getElementById('addBtn');
     const eventsPanel = document.getElementById('eventsPanel');
@@ -212,6 +347,7 @@
         download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
         trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
         link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+        qr: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14" y2="21"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="14" y1="17.5" x2="21" y2="17.5"/>',
         check: '<polyline points="20 6 9 17 4 12"/>',
         x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
     };
@@ -226,8 +362,6 @@
 
     let token = sessionStorage.getItem('bilca-admin-token') || '';
     let events = [];
-    let editingCode = null;
-    const NEW_ROW = '__new__';
 
     function authHeaders() {
         return { 'X-Admin-Token': token, 'Content-Type': 'application/json' };
@@ -239,10 +373,10 @@
     }
 
     async function loadEvents() {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty">Carregando…</td></tr>';
+        eventsGrid.innerHTML = '<p class="empty">Carregando…</p>';
         const response = await fetch('/api/events', { headers: authHeaders() });
         if (!response.ok) {
-            tbody.innerHTML = '<tr><td colspan="6" class="empty">Não foi possível carregar os eventos.</td></tr>';
+            eventsGrid.innerHTML = '<p class="empty">Não foi possível carregar os eventos.</p>';
             return;
         }
         events = await response.json();
@@ -250,78 +384,131 @@
     }
 
     function render() {
-        if (!events.length && editingCode !== NEW_ROW) {
-            tbody.innerHTML = '<tr><td colspan="6" class="empty">Nenhum evento cadastrado ainda.</td></tr>';
+        if (!events.length) {
+            eventsGrid.innerHTML = '<p class="empty">Nenhum evento cadastrado ainda.</p>';
             return;
         }
-        const rows = [];
-        if (editingCode === NEW_ROW) rows.push(renderEditRow({ code: NEW_ROW, name: '', date: '', host: '', location: '' }, true));
-        for (const ev of events) {
-            rows.push(editingCode === ev.code ? renderEditRow(ev, false) : renderViewRow(ev));
-        }
-        tbody.innerHTML = rows.join('');
+        const maxCount = Math.max(1, ...events.map(e => e.participantCount || 0));
+        eventsGrid.innerHTML = events.map(ev => renderEventCard(ev, maxCount)).join('');
     }
 
-    function renderViewRow(ev) {
+    function renderEventCard(ev, maxCount) {
         const link = `${location.origin}/?evento=${encodeURIComponent(ev.code)}`;
-        return `<tr>
-            <td>${escapeHtml(ev.name)}</td>
-            <td>${escapeHtml(formatDateBR(ev.date))}</td>
-            <td>${escapeHtml(ev.host)}</td>
-            <td>${escapeHtml(ev.location)}</td>
-            <td><button class="ghost small icon-btn" title="Copiar link" onclick="copyLink('${link}', this)">${icon('link')}</button></td>
-            <td class="actions">
+        const count = ev.participantCount || 0;
+        const r = 26;
+        const circumference = 2 * Math.PI * r;
+        const fraction = count > 0 ? Math.max(count / maxCount, 0.08) : 0;
+        const offset = circumference * (1 - fraction);
+        return `<div class="event-card">
+            <div class="event-card-top">
+                <div class="ring-wrap">
+                    <svg viewBox="0 0 60 60">
+                        <circle class="ring-bg" cx="30" cy="30" r="${r}"/>
+                        <circle class="ring-fg" cx="30" cy="30" r="${r}" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"/>
+                    </svg>
+                    <span class="ring-count">${count}</span>
+                </div>
+                <div>
+                    <h3 class="event-card-title">${escapeHtml(ev.name)}</h3>
+                    <p class="event-card-meta">${escapeHtml(formatDateBR(ev.date))}<br>${escapeHtml(ev.location)} · ${escapeHtml(ev.host)}</p>
+                </div>
+            </div>
+            <div class="event-card-actions">
+                <button class="ghost small icon-btn" title="Copiar link" onclick="copyLink('${link}', this)">${icon('link')}</button>
+                <button class="ghost small icon-btn" title="QR Code" onclick="showQr('${link}')">${icon('qr')}</button>
                 <button class="ghost small icon-btn" title="Participantes" onclick="viewParticipants('${ev.code}', '${escapeAttr(ev.name)}')">${icon('users')}</button>
                 <button class="ghost small icon-btn" title="Exportar CSV" onclick="exportEvent('${ev.code}', this)">${icon('download')}</button>
-                <button class="ghost small icon-btn" title="Editar" onclick="startEdit('${ev.code}')">${icon('edit')}</button>
+                <button class="ghost small icon-btn" title="Editar" onclick="openEventModal('${ev.code}')">${icon('edit')}</button>
                 <button class="danger small icon-btn" title="Excluir" onclick="removeEvent('${ev.code}')">${icon('trash')}</button>
-            </td>
-        </tr>`;
+            </div>
+        </div>`;
     }
 
-    function renderEditRow(ev, isNew) {
-        return `<tr>
-            <td><input id="edit-name" value="${escapeAttr(ev.name)}" placeholder="Nome do evento"></td>
-            <td><input id="edit-date" type="date" value="${escapeAttr(ev.date)}"></td>
-            <td><input id="edit-host" value="${escapeAttr(ev.host)}" placeholder="Host"></td>
-            <td><input id="edit-location" value="${escapeAttr(ev.location)}" placeholder="Local"></td>
-            <td class="empty">—</td>
-            <td class="actions">
-                <button class="small icon-btn" title="Salvar" onclick="saveEdit('${isNew ? NEW_ROW : ev.code}')">${icon('check')}</button>
-                <button class="ghost small icon-btn" title="Cancelar" onclick="cancelEdit()">${icon('x')}</button>
-            </td>
-        </tr>`;
-    }
+    const eventModal = document.getElementById('eventModal');
+    const eventModalTitle = document.getElementById('eventModalTitle');
+    const eventModalMsg = document.getElementById('eventModalMsg');
+    const emName = document.getElementById('em-name');
+    const emDate = document.getElementById('em-date');
+    const emHost = document.getElementById('em-host');
+    const emLocation = document.getElementById('em-location');
+    let editingEventCode = null;
 
-    window.startEdit = (code) => { editingCode = code; setRowMsg(''); render(); };
-    window.cancelEdit = () => { editingCode = null; setRowMsg(''); render(); };
+    window.openEventModal = (code) => {
+        editingEventCode = code || null;
+        const ev = code ? events.find(e => e.code === code) : null;
+        eventModalTitle.textContent = ev ? 'Editar evento' : 'Novo evento';
+        emName.value = ev ? ev.name : '';
+        emDate.value = ev ? ev.date : '';
+        emHost.value = ev ? ev.host : '';
+        emLocation.value = ev ? ev.location : '';
+        eventModalMsg.textContent = '';
+        eventModal.style.display = 'flex';
+        emName.focus();
+    };
+
+    function closeEventModal() { eventModal.style.display = 'none'; }
+
+    document.getElementById('eventModalCancelBtn').addEventListener('click', closeEventModal);
+    eventModal.addEventListener('click', (e) => { if (e.target === eventModal) closeEventModal(); });
+
+    document.getElementById('eventModalSaveBtn').addEventListener('click', async () => {
+        const body = { name: emName.value, date: emDate.value, host: emHost.value, location: emLocation.value };
+        const isNew = !editingEventCode;
+        const url = isNew ? '/api/events' : `/api/events/${encodeURIComponent(editingEventCode)}`;
+        const response = await fetch(url, { method: isNew ? 'POST' : 'PUT', headers: authHeaders(), body: JSON.stringify(body) });
+        const result = await response.json().catch(() => ({}));
+        if (response.ok) {
+            closeEventModal();
+            setRowMsg(isNew ? 'Evento criado!' : 'Evento atualizado!', 'success');
+            await loadEvents();
+        } else {
+            eventModalMsg.textContent = result.message || 'Não foi possível salvar.';
+            eventModalMsg.className = 'error';
+        }
+    });
+
+    function copyText(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(text);
+        }
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try { document.execCommand('copy'); } finally { document.body.removeChild(ta); }
+        return Promise.resolve();
+    }
 
     window.copyLink = (link, btn) => {
-        navigator.clipboard.writeText(link);
+        copyText(link);
         const original = btn.innerHTML;
         btn.innerHTML = icon('check');
         setTimeout(() => btn.innerHTML = original, 1500);
     };
 
-    window.saveEdit = async (code) => {
-        const body = {
-            name: document.getElementById('edit-name').value,
-            date: document.getElementById('edit-date').value,
-            host: document.getElementById('edit-host').value,
-            location: document.getElementById('edit-location').value
-        };
-        const isNew = code === NEW_ROW;
-        const url = isNew ? '/api/events' : `/api/events/${encodeURIComponent(code)}`;
-        const response = await fetch(url, { method: isNew ? 'POST' : 'PUT', headers: authHeaders(), body: JSON.stringify(body) });
-        const result = await response.json().catch(() => ({}));
-        if (response.ok) {
-            editingCode = null;
-            setRowMsg(isNew ? 'Evento criado!' : 'Evento atualizado!', 'success');
-            await loadEvents();
-        } else {
-            setRowMsg(result.message || 'Não foi possível salvar.', 'error');
+    const qrOverlay = document.getElementById('qrOverlay');
+    const qrImg = document.getElementById('qrImg');
+    const qrLinkText = document.getElementById('qrLinkText');
+
+    window.showQr = (link) => {
+        qrLinkText.textContent = link;
+        try {
+            const qr = qrcode(0, 'M');
+            qr.addData(link);
+            qr.make();
+            qrImg.src = qr.createDataURL(6, 2);
+        } catch (e) {
+            qrLinkText.textContent = 'Não foi possível gerar o QR Code.';
         }
+        qrOverlay.style.display = 'flex';
     };
+
+    document.getElementById('qrCloseBtn').addEventListener('click', () => qrOverlay.style.display = 'none');
+    document.getElementById('qrCopyBtn').addEventListener('click', () => copyText(qrLinkText.textContent));
+    qrOverlay.addEventListener('click', (e) => { if (e.target === qrOverlay) qrOverlay.style.display = 'none'; });
 
     window.removeEvent = async (code) => {
         if (!confirm('Excluir este evento? Essa ação não pode ser desfeita.')) return;
@@ -335,7 +522,7 @@
         }
     };
 
-    addBtn.addEventListener('click', () => { editingCode = NEW_ROW; setRowMsg(''); render(); });
+    addBtn.addEventListener('click', () => openEventModal(null));
 
     window.exportEvent = async (code, btn) => {
         const ev = events.find(e => e.code === code);
@@ -377,6 +564,8 @@
     window.viewParticipants = async (code, name) => {
         currentEventCode = code;
         editingParticipantId = null;
+        participantSearchTerm = '';
+        document.getElementById('participantSearch').value = '';
         participantsTitle.textContent = `Participantes · ${name}`;
         participantsSub.textContent = '';
         participantsMsg.textContent = '';
@@ -384,6 +573,11 @@
         participantsPanel.style.display = 'block';
         await loadParticipants();
     };
+
+    document.getElementById('participantSearch').addEventListener('input', (e) => {
+        participantSearchTerm = e.target.value;
+        renderParticipants();
+    });
 
     backBtn.addEventListener('click', () => {
         participantsPanel.style.display = 'none';
@@ -401,17 +595,29 @@
         renderParticipants();
     }
 
+    let participantSearchTerm = '';
+
+    function getFilteredParticipants() {
+        const term = participantSearchTerm.trim().toLowerCase();
+        if (!term) return currentParticipants;
+        return currentParticipants.filter(p =>
+            [p.name, p.email, p.phone, p.stack].some(v => String(v || '').toLowerCase().includes(term)));
+    }
+
     function renderParticipants() {
-        participantsSub.textContent = `${currentParticipants.length} inscrito(s)`;
-        if (!currentParticipants.length && editingParticipantId !== NEW_PARTICIPANT) {
-            participantsTbody.innerHTML = '<tr><td colspan="5" class="empty">Ninguém se inscreveu ainda.</td></tr>';
+        const filtered = getFilteredParticipants();
+        participantsSub.textContent = participantSearchTerm.trim()
+            ? `${filtered.length} de ${currentParticipants.length} inscrito(s)`
+            : `${currentParticipants.length} inscrito(s)`;
+        if (!filtered.length && editingParticipantId !== NEW_PARTICIPANT) {
+            participantsTbody.innerHTML = `<tr><td colspan="5" class="empty">${currentParticipants.length ? 'Nenhum participante encontrado.' : 'Ninguém se inscreveu ainda.'}</td></tr>`;
             return;
         }
         const rows = [];
         if (editingParticipantId === NEW_PARTICIPANT) {
             rows.push(renderParticipantEditRow({ id: NEW_PARTICIPANT, name: '', email: '', phone: '', stack: '' }, true));
         }
-        for (const p of currentParticipants) {
+        for (const p of filtered) {
             rows.push(editingParticipantId === p.id ? renderParticipantEditRow(p, false) : renderParticipantViewRow(p));
         }
         participantsTbody.innerHTML = rows.join('');
@@ -419,10 +625,10 @@
 
     function renderParticipantViewRow(p) {
         return `<tr>
-            <td>${escapeHtml(p.name)}</td>
-            <td>${escapeHtml(p.email)}</td>
-            <td>${escapeHtml(p.phone)}</td>
-            <td>${escapeHtml(p.stack)}</td>
+            <td data-label="Nome">${escapeHtml(p.name)}</td>
+            <td data-label="E-mail">${escapeHtml(p.email)}</td>
+            <td data-label="Telefone">${escapeHtml(p.phone)}</td>
+            <td data-label="Stack">${escapeHtml(p.stack)}</td>
             <td class="actions">
                 <button class="ghost small icon-btn" title="Editar" onclick="startEditParticipant(${p.id})">${icon('edit')}</button>
                 <button class="danger small icon-btn" title="Excluir" onclick="removeParticipant(${p.id})">${icon('trash')}</button>
@@ -432,10 +638,10 @@
 
     function renderParticipantEditRow(p, isNew) {
         return `<tr>
-            <td><input id="pedit-name" value="${escapeAttr(p.name)}" placeholder="Nome completo"></td>
-            <td><input id="pedit-email" value="${escapeAttr(p.email)}" placeholder="E-mail"></td>
-            <td><input id="pedit-phone" value="${escapeAttr(p.phone)}" placeholder="Telefone"></td>
-            <td><input id="pedit-stack" value="${escapeAttr(p.stack)}" placeholder="Stack"></td>
+            <td data-label="Nome"><input id="pedit-name" value="${escapeAttr(p.name)}" placeholder="Nome completo"></td>
+            <td data-label="E-mail"><input id="pedit-email" value="${escapeAttr(p.email)}" placeholder="E-mail"></td>
+            <td data-label="Telefone"><input id="pedit-phone" value="${escapeAttr(p.phone)}" placeholder="Telefone"></td>
+            <td data-label="Stack"><input id="pedit-stack" value="${escapeAttr(p.stack)}" placeholder="Stack"></td>
             <td class="actions">
                 <button class="small icon-btn" title="Salvar" onclick="saveParticipantEdit('${isNew ? NEW_PARTICIPANT : p.id}')">${icon('check')}</button>
                 <button class="ghost small icon-btn" title="Cancelar" onclick="cancelParticipantEdit()">${icon('x')}</button>
@@ -491,6 +697,18 @@
             participantsMsg.className = 'error';
         }
     };
+
+    const EVENTS_POLL_MS = 20000;
+
+    function isEventsPanelActive() {
+        return app.style.display !== 'none' && eventsPanel.style.display !== 'none';
+    }
+
+    setInterval(() => { if (isEventsPanelActive()) loadEvents(); }, EVENTS_POLL_MS);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && isEventsPanelActive()) loadEvents();
+    });
 
     function unlock() {
         token = tokenInput.value.trim();
