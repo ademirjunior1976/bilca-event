@@ -1,16 +1,17 @@
 # Com dominio: troque SEU_DOMINIO abaixo (Caddy emite HTTPS automatico via Let's Encrypt).
 # Sem dominio, comente o bloco acima e descomente o bloco ":80" abaixo (HTTP direto no IP).
+# max_size precisa ficar acima do limite de upload da app (8MB por arquivo em application.properties).
 
 SEU_DOMINIO {
 	request_body {
-		max_size 1MB
+		max_size 10MB
 	}
 	reverse_proxy 127.0.0.1:8080
 }
 
 # :80 {
 # 	request_body {
-# 		max_size 1MB
+# 		max_size 10MB
 # 	}
 # 	reverse_proxy 127.0.0.1:8080
 # }
