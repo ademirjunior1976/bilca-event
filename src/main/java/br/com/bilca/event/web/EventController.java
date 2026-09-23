@@ -113,7 +113,7 @@ public class EventController {
                 participantRepository.markMaterialsSent(participant.id(), event.id(), true);
                 sent++;
             } catch (Exception e) {
-                log.warn("Falha ao enviar materiais para {}: {}", participant.email(), e.getMessage());
+                log.warn("Falha ao enviar materiais para {}", participant.email(), e);
                 failed++;
             }
         }

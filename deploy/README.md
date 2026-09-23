@@ -67,6 +67,9 @@ ssh opc@SEU_IP "sudo mv /tmp/app.jar /opt/bilca-event/app/app.jar && sudo chown 
 4. Crie o usuário `event_app` no banco (uma vez, como ADMIN) e rode `schema.sql` (uma vez, como `event_app` — ou como ADMIN com `ALTER SESSION SET CURRENT_SCHEMA = event_app` antes) — mais fácil pelo **Database Actions** no navegador (`Autonomous Database > BilcaBD > Database Actions > SQL`) do que via sqlplus, já que a porta 1522 costuma estar bloqueada em redes corporativas.
 5. Se o Autonomous Database tiver **ACL habilitada** (Rede > Tipo de acesso "Permitir acesso seguro de IPs e VCN especificados"), adicione o **IP público da VM** em **Autonomous Database > Rede > Lista de controle de acesso > Editar** — só o OCID da VCN não basta quando a VM tem IP público direto (não passa por NAT Gateway). Sem isso a app falha com `ORA-12506: TNS:listener rejected connection based on service ACL filtering`. Ao editar a ACL pelo navegador, adicione também o seu próprio IP (tem um botão pronto pra isso) para não ficar bloqueado do Database Actions.
 
+6. Envio de materiais por e-mail (Gmail): gere uma senha de app em https://myaccount.google.com/apppasswords e preencha `GMAIL_SMTP_USERNAME`, `GMAIL_SMTP_APP_PASSWORD` e `BILCA_MAIL_FROM` no `.env` (valor com espacos ou `<>` entre aspas). Sem isso o resto do sistema funciona, mas os e-mails nao saem (a falha so vai pro log, nunca bloqueia a inscricao).
+7. **Migracoes**: um banco criado antes de set/2026 precisa rodar `migration-2026-09-documentos-capacidade.sql` uma vez (documentos, controle de material enviado e capacidade do evento) **antes** de subir o `.jar` novo - senao a app quebra ao consultar colunas que nao existem.
+
 ## 4. Servico systemd
 
 ```

@@ -62,8 +62,7 @@ public class ParticipantController {
                 participant = findParticipantOrThrow(participant.id(), event.id());
             }
         } catch (Exception e) {
-            log.warn("Não foi possível enviar os materiais automaticamente para {}: {}",
-                    participant.email(), e.getMessage());
+            log.warn("Não foi possível enviar os materiais automaticamente para {}", participant.email(), e);
         }
         return ParticipantResponse.from(participant);
     }
@@ -118,7 +117,7 @@ public class ParticipantController {
         try {
             mailService.sendMaterials(event, participant, documents);
         } catch (Exception e) {
-            log.warn("Falha ao enviar materiais para {}: {}", participant.email(), e.getMessage());
+            log.warn("Falha ao enviar materiais para {}", participant.email(), e);
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Não foi possível enviar o e-mail");
         }
         participantRepository.markMaterialsSent(id, event.id(), true);
