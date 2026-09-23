@@ -163,6 +163,7 @@
         <div id="successPanel" class="success-panel" style="display:none">
             <div class="icon">✅</div>
             <h2>Presença confirmada!</h2>
+            <p id="successMaterialsNote" style="display:none">Você vai receber o material do evento no e-mail informado.</p>
         </div>
     </div>
 </div>
@@ -195,6 +196,8 @@
     const successPanel = document.getElementById('successPanel');
     const form = document.getElementById('participantForm');
     const submitBtn = document.getElementById('submitBtn');
+    const successMaterialsNote = document.getElementById('successMaterialsNote');
+    let eventHasDocuments = false;
 
     function setMessage(text, type) {
         message.textContent = text;
@@ -212,6 +215,7 @@
                 title.textContent = event.name;
                 const date = new Date(event.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
                 eventInfo.textContent = `${date} · ${event.location} · Host: ${event.host}`;
+                eventHasDocuments = (event.documentCount || 0) > 0;
             })
             .catch(() => {
                 title.textContent = 'Evento não encontrado';
@@ -234,6 +238,7 @@
             if (response.ok) {
                 formArea.style.display = 'none';
                 successPanel.style.display = 'block';
+                successMaterialsNote.style.display = eventHasDocuments ? 'block' : 'none';
             } else {
                 setMessage(body.message || 'Não foi possível realizar o cadastro.', 'error');
             }
