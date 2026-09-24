@@ -7,6 +7,7 @@ import br.com.bilca.event.repository.EventDocumentRepository;
 import br.com.bilca.event.repository.EventRepository;
 import br.com.bilca.event.repository.ParticipantRepository;
 import br.com.bilca.event.service.MailService;
+import br.com.bilca.event.service.RegistrationMailer;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -29,15 +30,17 @@ public class ParticipantController {
     private final ParticipantRepository participantRepository;
     private final EventDocumentRepository eventDocumentRepository;
     private final MailService mailService;
+    private final RegistrationMailer registrationMailer;
     private final AdminAuth adminAuth;
 
     public ParticipantController(EventRepository eventRepository, ParticipantRepository participantRepository,
                                  EventDocumentRepository eventDocumentRepository, MailService mailService,
-                                 AdminAuth adminAuth) {
+                                 RegistrationMailer registrationMailer, AdminAuth adminAuth) {
         this.eventRepository = eventRepository;
         this.participantRepository = participantRepository;
         this.eventDocumentRepository = eventDocumentRepository;
         this.mailService = mailService;
+        this.registrationMailer = registrationMailer;
         this.adminAuth = adminAuth;
     }
 
@@ -54,16 +57,8 @@ public class ParticipantController {
         Participant participant = participantRepository.save(
                 event.id(), request.name(), request.email(), request.phone(), request.stack());
 
-        // Falha de e-mail não pode impedir a inscrição: só registra no log.
-        try {
-            List<EventDocument> documents = eventDocumentRepository.findMetadataByEventId(event.id());
-            if (mailService.sendMaterials(event, participant, documents)) {
-                participantRepository.markMaterialsSent(participant.id(), event.id(), true);
-                participant = findParticipantOrThrow(participant.id(), event.id());
-            }
-        } catch (Exception e) {
-            log.warn("Não foi possível enviar os materiais automaticamente para {}", participant.email(), e);
-        }
+        // O e-mail sai em segundo plano: a inscrição responde na hora e nunca falha por causa dele.
+        registrationMailer.sendMaterialsAfterRegistration(event, participant);
         return ParticipantResponse.from(participant);
     }
 
@@ -115,7 +110,7 @@ public class ParticipantController {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Nenhum documento cadastrado para este evento");
         }
         try {
-            mailService.sendMaterials(event, participant, documents);
+            mailService.sendMaterials(event, participant, mailService.loadAttachments(event, documents));
         } catch (Exception e) {
             log.warn("Falha ao enviar materiais para {}", participant.email(), e);
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Não foi possível enviar o e-mail");

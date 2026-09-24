@@ -32,12 +32,29 @@ public class MailService {
         this.fromAddress = fromAddress;
     }
 
+    /** Conteúdo de um documento já lido do banco, pronto para anexar. */
+    public record Attachment(String fileName, String contentType, byte[] data) {
+    }
+
     /**
-     * Envia todos os documentos do evento anexados num único e-mail.
+     * Lê do banco o conteúdo dos documentos uma única vez, para reaproveitar
+     * em vários e-mails (ex.: envio em massa) sem reler os BLOBs a cada participante.
+     */
+    public List<Attachment> loadAttachments(Event event, List<EventDocument> documents) {
+        return documents.stream()
+                .map(document -> new Attachment(document.fileName(), document.contentType(),
+                        eventDocumentRepository.findDataByIdAndEventId(document.id(), event.id())
+                                .orElseThrow(() -> new IllegalStateException(
+                                        "Documento não encontrado: " + document.id()))))
+                .toList();
+    }
+
+    /**
+     * Envia todos os anexos do evento num único e-mail.
      * Retorna false (sem enviar nada) quando o evento não tem documentos.
      */
-    public boolean sendMaterials(Event event, Participant participant, List<EventDocument> documents) {
-        if (documents.isEmpty()) {
+    public boolean sendMaterials(Event event, Participant participant, List<Attachment> attachments) {
+        if (attachments.isEmpty()) {
             return false;
         }
         MimeMessage message = mailSender.createMimeMessage();
@@ -49,10 +66,9 @@ public class MailService {
             }
             helper.setSubject("Materiais do evento " + event.name());
             helper.setText(buildBody(event, participant), false);
-            for (EventDocument document : documents) {
-                byte[] data = eventDocumentRepository.findDataByIdAndEventId(document.id(), event.id())
-                        .orElseThrow(() -> new IllegalStateException("Documento não encontrado: " + document.id()));
-                helper.addAttachment(document.fileName(), new ByteArrayResource(data), document.contentType());
+            for (Attachment attachment : attachments) {
+                helper.addAttachment(attachment.fileName(), new ByteArrayResource(attachment.data()),
+                        attachment.contentType());
             }
         } catch (Exception e) {
             throw new MailSendFailedException("Falha ao montar e-mail para " + participant.email(), e);

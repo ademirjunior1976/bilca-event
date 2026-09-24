@@ -102,6 +102,7 @@ public class EventController {
         if (documents.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Nenhum documento cadastrado para este evento");
         }
+        List<MailService.Attachment> attachments = mailService.loadAttachments(event, documents);
         int sent = 0;
         int failed = 0;
         for (Participant participant : participantRepository.findByEventId(event.id())) {
@@ -109,7 +110,7 @@ public class EventController {
                 continue;
             }
             try {
-                mailService.sendMaterials(event, participant, documents);
+                mailService.sendMaterials(event, participant, attachments);
                 participantRepository.markMaterialsSent(participant.id(), event.id(), true);
                 sent++;
             } catch (Exception e) {
