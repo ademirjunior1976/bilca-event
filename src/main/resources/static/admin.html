@@ -185,6 +185,35 @@
         .participants-table .materials-cell { justify-content: flex-end; }
         .participants-table td.actions { display: table-cell; width: 1%; text-align: right; }
         .participants-table td.actions button + button { margin-left: 6px; }
+        /* Participantes em cartões: usado no celular e quando o conteúdo não cabe em uma linha (ver fitParticipantsTable). */
+        .participants-table.as-cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+        .participants-table.as-cards tbody {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 12px;
+        }
+        .participants-table.as-cards tr {
+            display: flex; flex-wrap: wrap; align-items: center; border: 1px solid var(--border); border-radius: 12px;
+            padding: 10px 14px; align-content: start;
+        }
+        .participants-table.as-cards td {
+            display: block; flex: 1 1 100%; width: auto; border: none; padding: 6px 0; white-space: normal;
+            overflow-wrap: anywhere; font-size: 14px;
+        }
+        .participants-table.as-cards td[data-label]::before {
+            content: attr(data-label); display: block; font-size: 11px; font-weight: 600;
+            color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px;
+        }
+        /* Rodapé do cartão: material (checkbox + enviar) à esquerda e editar/excluir à direita, na mesma linha. */
+        .participants-table.as-cards td.fit { flex: 1 1 auto; display: flex; align-items: center; gap: 10px; padding-top: 8px; text-align: left; }
+        .participants-table.as-cards td.fit::before { display: inline; margin-bottom: 0; }
+        .participants-table.as-cards td.actions { flex: 0 0 auto; display: flex; gap: 6px; justify-content: flex-end; padding-top: 8px; }
+        .participants-table.as-cards td.actions button + button { margin-left: 0; }
+        .participants-table.as-cards .materials-cell { justify-content: flex-start; }
+        .participants-table.as-cards tr:has(td.empty) { grid-column: 1 / -1; border: none; }
+        .participants-table.as-cards td.empty { flex-basis: 100%; text-align: center; }
+        /* Degraus de compactação antes de virar cartão. */
+        .participants-table.compact-1 td { font-size: 12px; }
+        .participants-table.compact-2 td { font-size: 11px; }
+        .participants-table.compact-2 th, .participants-table.compact-2 td { padding-left: 6px; padding-right: 6px; }
         .materials-check { width: 18px; min-width: 0; height: 18px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
         .materials-label { font-size: 12px; color: var(--muted); }
 
@@ -200,27 +229,6 @@
             button { padding: 11px 16px; }
             button.icon-btn { width: 40px; height: 40px; }
             button.icon-btn.small { width: 35px; height: 35px; }
-
-            #participantsTbody { display: block; }
-            #participantsTbody tr {
-                display: flex; flex-wrap: wrap; align-items: center; border: 1px solid var(--border); border-radius: 12px;
-                padding: 10px 14px; margin-bottom: 12px;
-            }
-            #participantsTbody td {
-                display: block; flex: 1 1 100%; width: auto; border: none; padding: 6px 0; white-space: normal;
-            }
-            #participantsTbody td[data-label]::before {
-                content: attr(data-label); display: block; font-size: 11px; font-weight: 600;
-                color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px;
-            }
-            /* Rodapé do cartão: material (checkbox + enviar) à esquerda e editar/excluir à direita, na mesma linha. */
-            #participantsTbody td.fit { flex: 1 1 auto; display: flex; align-items: center; gap: 10px; padding-top: 8px; }
-            #participantsTbody td.fit::before { display: inline; margin-bottom: 0; }
-            #participantsTbody td.actions { flex: 0 0 auto; display: flex; gap: 6px; justify-content: flex-end; padding-top: 8px; }
-            #participantsTbody td.actions button + button { margin-left: 0; }
-            #participantsPanel thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-            #participantsPanel .table-wrap { overflow-x: visible; }
-            .participants-table .materials-cell { justify-content: flex-start; }
         }
     </style>
 </head>
@@ -800,7 +808,33 @@
             rows.push(editingParticipantId === p.id ? renderParticipantEditRow(p, false) : renderParticipantViewRow(p));
         }
         participantsTbody.innerHTML = rows.join('');
+        fitParticipantsTable();
     }
+
+    // Tabela responsiva ao conteúdo: tenta caber em uma linha por participante (reduzindo a fonte
+    // em até dois degraus); se ainda não couber, ou se a tela for de celular, mostra em cartões.
+    const PARTICIPANTS_COMPACT_STEPS = ['compact-1', 'compact-2'];
+    function fitParticipantsTable() {
+        const table = participantsTbody.closest('table');
+        const wrap = table.parentElement;
+        table.classList.remove('as-cards', ...PARTICIPANTS_COMPACT_STEPS);
+        if (participantsPanel.style.display === 'none') return;
+        const overflows = () => wrap.scrollWidth > wrap.clientWidth + 1;
+        if (window.innerWidth <= 600) { table.classList.add('as-cards'); return; }
+        for (const step of PARTICIPANTS_COMPACT_STEPS) {
+            if (!overflows()) return;
+            table.classList.add(step);
+        }
+        if (overflows()) {
+            table.classList.remove(...PARTICIPANTS_COMPACT_STEPS);
+            table.classList.add('as-cards');
+        }
+    }
+    let fitParticipantsTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(fitParticipantsTimer);
+        fitParticipantsTimer = setTimeout(fitParticipantsTable, 120);
+    });
 
     function renderParticipantViewRow(p) {
         const sent = !!p.materialsSentAt;
